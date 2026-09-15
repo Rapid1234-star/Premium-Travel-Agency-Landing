@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MagneticButton } from './MagneticButton';
+import { SketchbookSection } from './SketchbookSection';
 import type { MotionValue } from 'framer-motion';
 
 export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, scrollOffset?: MotionValue<number> }) {
@@ -280,6 +281,9 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             </div>
          </motion.form>
       </section>
+
+      {/* SECTION 7: DESTINATIONS SKETCHBOOK (600vh - 700vh) */}
+      <SketchbookSection />
 
     </div>
   );

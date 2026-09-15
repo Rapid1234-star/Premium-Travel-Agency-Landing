@@ -120,40 +120,46 @@ export function JetModel() {
           <sphereGeometry args={[1, 16, 16]} />
         </mesh>
 
-        {/* Wing root fairing (smooth blend fuselage ↔ wing) */}
-        <mesh material={materials.body} position={[0.0, -0.37, 0]} scale={[2.4, 0.14, 0.68]} castShadow receiveShadow>
+        {/* Wing box belly fairing */}
+        <mesh material={materials.body} position={[-0.5, -0.42, 0]} scale={[2.8, 0.15, 0.65]} castShadow receiveShadow>
           <sphereGeometry args={[1, 32, 32]} />
+        </mesh>
+        {/* Subtle underbelly structural line */}
+        <mesh material={materials.chrome} position={[-0.5, -0.56, 0]} scale={[2.5, 0.01, 0.02]}>
+          <boxGeometry args={[1, 1, 1]} />
         </mesh>
 
         {/* ══════════════════ COCKPIT ══════════════════ */}
-        <group position={[3.6, 0.2, 0]} rotation={[0, 0, -0.18]}>
-          <mesh material={materials.glass} scale={[0.85, 0.25, 0.38]}>
+        <group position={[3.6, 0.18, 0]} rotation={[0, 0, -0.22]}>
+          <mesh material={materials.glass} scale={[0.9, 0.22, 0.35]}>
             <sphereGeometry args={[1, 32, 32]} />
           </mesh>
-          <mesh material={materials.body} position={[0.4, 0, 0]} scale={[0.06, 0.28, 0.42]}>
+          {/* Central Chrome Mullion */}
+          <mesh material={materials.chrome} position={[0.45, 0, 0]} scale={[0.04, 0.25, 0.38]}>
             <boxGeometry args={[1, 1, 1]} />
           </mesh>
-          <mesh material={materials.body} position={[0, 0,  0.18]} rotation={[0,  0.4, 0]} scale={[0.9, 0.26, 0.02]}>
+          {/* Side Chrome Frames */}
+          <mesh material={materials.chrome} position={[0.1, 0,  0.16]} rotation={[0,  0.4, 0]} scale={[0.9, 0.24, 0.02]}>
             <boxGeometry args={[1, 1, 1]} />
           </mesh>
-          <mesh material={materials.body} position={[0, 0, -0.18]} rotation={[0, -0.4, 0]} scale={[0.9, 0.26, 0.02]}>
+          <mesh material={materials.chrome} position={[0.1, 0, -0.16]} rotation={[0, -0.4, 0]} scale={[0.9, 0.24, 0.02]}>
             <boxGeometry args={[1, 1, 1]} />
           </mesh>
         </group>
 
-        {/* ══════════════════ PASSENGER WINDOWS ══════════════════ */}
-        {[...Array(6)].map((_, i) => (
-          <group key={`win-${i}`} position={[1.8 - i * 0.55, 0.1, 0]}>
-            <mesh material={materials.chrome} position={[0, 0,  0.51]} scale={[0.18, 0.22, 0.05]} rotation={[0, 0, 0.1]}>
+        {/* ══════════════════ PASSENGER WINDOWS (Gulfstream-style Ovals) ══════════════════ */}
+        {[...Array(7)].map((_, i) => (
+          <group key={`win-${i}`} position={[1.9 - i * 0.5, 0.12, 0]}>
+            <mesh material={materials.chrome} position={[0, 0,  0.51]} scale={[0.22, 0.16, 0.05]} rotation={[0, 0, 0.05]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            <mesh material={materials.glass}  position={[0, 0,  0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.glass}  position={[0, 0,  0.52]} scale={[0.19, 0.13, 0.05]} rotation={[0, 0, 0.05]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            <mesh material={materials.chrome} position={[0, 0, -0.51]} scale={[0.18, 0.22, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.chrome} position={[0, 0, -0.51]} scale={[0.22, 0.16, 0.05]} rotation={[0, 0, 0.05]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            <mesh material={materials.glass}  position={[0, 0, -0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.glass}  position={[0, 0, -0.52]} scale={[0.19, 0.13, 0.05]} rotation={[0, 0, 0.05]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
           </group>
@@ -232,9 +238,13 @@ export function JetModel() {
         <mesh material={materials.body} position={[-3.8, 1.2, 0]} scale={[1.2, 1.6, 0.05]} rotation={[0, 0, -0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
-        {/* Tail bullet fairing */}
-        <mesh material={materials.body} position={[-4.8, 2.0, 0]} scale={[0.8, 0.1, 0.1]}>
+        {/* T-Tail Bullet Fairing (Aerodynamic pod at top of tail) */}
+        <mesh material={materials.body} position={[-4.6, 2.0, 0]} scale={[1.2, 0.12, 0.12]} castShadow receiveShadow>
           <sphereGeometry args={[1, 32, 32]} />
+        </mesh>
+        {/* Forward chrome tip for bullet fairing */}
+        <mesh material={materials.chrome} position={[-3.45, 2.0, 0]} scale={[0.08, 0.11, 0.11]}>
+          <sphereGeometry args={[1, 16, 16]} />
         </mesh>
         {/* Tail strobe */}
         <mesh material={materials.strobeWhite} position={[-5.6, 2.0, 0]}>
@@ -283,9 +293,17 @@ export function JetModel() {
             <mesh material={materials.chrome} position={[1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
               <torusGeometry args={[0.33, 0.05, 32, 64]} />
             </mesh>
+            {/* Metallic Nacelle Band */}
+            <mesh material={materials.chrome} position={[0.6, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+              <cylinderGeometry args={[0.34, 0.35, 0.05, 64]} />
+            </mesh>
             {/* Intake void */}
             <mesh material={materials.glass} position={[1.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[0.32, 0.32, 0.05, 32]} />
+            </mesh>
+            {/* Engine Fan Spinner Cone */}
+            <mesh material={materials.chrome} position={[1.05, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+              <coneGeometry args={[0.1, 0.25, 16]} />
             </mesh>
             {/* Exhaust lip */}
             <mesh material={materials.chrome} position={[-1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>

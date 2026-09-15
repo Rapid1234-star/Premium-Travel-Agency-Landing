@@ -14,7 +14,7 @@ export function SketchbookSection() {
           src="/sketchbook/index.html" 
           title="LuxFly Destinations Sketchbook"
           className="w-full h-full border-none outline-none bg-[#f7f5f0]"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts"
           loading="lazy"
         />
       </motion.div>

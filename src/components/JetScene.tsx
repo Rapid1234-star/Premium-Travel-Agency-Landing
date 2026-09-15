@@ -22,23 +22,27 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
     // Exponential decay lerp — truly frame-rate independent
     const lerpFactor = 1 - Math.pow(0.001, delta);
 
-    // Smooth phase weights (0-1) mapped to 6 transition intervals for 7 pages
-    // Each page represents ~0.166 of the total scroll (1/6)
+    // Smooth phase weights (0-1) mapped to 8 transition intervals for 9 pages
+    // Each page represents ~0.111 of the total scroll (1/8)
     const t = scroll.offset;
-    const w1 = Math.min(1, Math.max(0, t / 0.166));                    // Hero to Aerodynamics (0 to 100vh)
-    const w2 = Math.min(1, Math.max(0, (t - 0.166) / 0.166));          // Aerodynamics to Seamless (100vh to 200vh)
-    const w3 = Math.min(1, Math.max(0, (t - 0.333) / 0.166));          // Seamless to Comfort (200vh to 300vh)
-    const w4 = Math.min(1, Math.max(0, (t - 0.5) / 0.166));            // Comfort to Brand (300vh to 400vh)
-    const w5 = Math.min(1, Math.max(0, (t - 0.666) / 0.166));          // Brand to CTA (400vh to 500vh)
-    const w6 = Math.min(1, Math.max(0, (t - 0.833) / 0.166));          // CTA to Sketchbook (500vh to 600vh)
+    const w1 = Math.min(1, Math.max(0, t / 0.111));                    // Hero
+    const w2 = Math.min(1, Math.max(0, (t - 0.111) / 0.111));         // Destinations
+    const w3 = Math.min(1, Math.max(0, (t - 0.222) / 0.111));         // Travel
+    const w4 = Math.min(1, Math.max(0, (t - 0.333) / 0.111));         // How It Works
+    const w5 = Math.min(1, Math.max(0, (t - 0.444) / 0.111));         // Experience
+    const w6 = Math.min(1, Math.max(0, (t - 0.555) / 0.111));         // Story
+    const w7 = Math.min(1, Math.max(0, (t - 0.666) / 0.111));         // Social Proof
+    const w8 = Math.min(1, Math.max(0, (t - 0.777) / 0.111));         // Sketchbook
 
-    // Phase targets
+    // Phase targets — plane flies through the sky as user scrolls
     const p1 = { x: 0, y: -2.5 + w1 * 3.5, z: -4 + w1 * 10, rx: w1 * (Math.PI / 4), ry: 0, rz: 0 };
     const p2 = { x: 0, y: 0, z: 0, rx: 0, ry: w2 * (Math.PI / 6), rz: 0 };
     const p3 = { x: 0, y: -0.5 - w3, z: -2 * w3, rx: (Math.PI / 24) * Math.sin(w3 * Math.PI), ry: (Math.PI / 6) - w3 * (Math.PI / 12), rz: 0 };
-    const p4 = { x: w4 * 4, y: -1.5, z: -2 - w4 * 2, rx: 0, ry: (Math.PI / 12) + w4 * (Math.PI / 2.5), rz: 0 };
-    const p5 = { x: 4 - w5 * 8, y: -1.5 - w5 * 1.5, z: -4 - w5 * 6, rx: -w5 * (Math.PI / 8), ry: (Math.PI / 12 + Math.PI / 2.5) - w5 * (Math.PI / 2.5), rz: w5 * (Math.PI / 3) };
-    const p6 = { x: -4, y: -3 + w6 * 10, z: -10, rx: -Math.PI / 8 + w6 * Math.PI/4, ry: Math.PI / 12 + Math.PI / 2.5 - Math.PI / 2.5, rz: Math.PI / 3 - w6 * Math.PI/3 };
+    const p4 = { x: w4 * 3, y: -1, z: -1 - w4 * 2, rx: 0, ry: (Math.PI / 12) + w4 * (Math.PI / 3), rz: 0 };
+    const p5 = { x: 3 - w5 * 6, y: -1.5 - w5 * 1, z: -3 - w5 * 4, rx: -w5 * (Math.PI / 8), ry: (Math.PI / 12 + Math.PI / 3) - w5 * (Math.PI / 3), rz: w5 * (Math.PI / 4) };
+    const p6 = { x: -3 + w6 * 2, y: -2.5 + w6 * 2, z: -7 + w6 * 3, rx: -Math.PI / 8 + w6 * Math.PI/6, ry: Math.PI / 12, rz: Math.PI / 4 - w6 * Math.PI / 4 };
+    const p7 = { x: -1, y: -0.5, z: -4, rx: 0, ry: Math.PI / 12, rz: 0 };
+    const p8 = { x: -1 + w8 * 2, y: -0.5 - w8, z: -4 - w8 * 2, rx: w8 * Math.PI / 6, ry: Math.PI / 12 + w8 * Math.PI / 6, rz: 0 };
 
     // Blend all phases
     let bx = p1.x, by = p1.y, bz = p1.z, brx = p1.rx, bry = p1.ry, brz = p1.rz;
@@ -47,6 +51,8 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
     if (w4 > 0) { bx = bx + (p4.x - bx) * w4; by = by + (p4.y - by) * w4; bz = bz + (p4.z - bz) * w4; brx = brx + (p4.rx - brx) * w4; bry = bry + (p4.ry - bry) * w4; brz = brz + (p4.rz - brz) * w4; }
     if (w5 > 0) { bx = bx + (p5.x - bx) * w5; by = by + (p5.y - by) * w5; bz = bz + (p5.z - bz) * w5; brx = brx + (p5.rx - brx) * w5; bry = bry + (p5.ry - bry) * w5; brz = brz + (p5.rz - brz) * w5; }
     if (w6 > 0) { bx = bx + (p6.x - bx) * w6; by = by + (p6.y - by) * w6; bz = bz + (p6.z - bz) * w6; brx = brx + (p6.rx - brx) * w6; bry = bry + (p6.ry - bry) * w6; brz = brz + (p6.rz - brz) * w6; }
+    if (w7 > 0) { bx = bx + (p7.x - bx) * w7; by = by + (p7.y - by) * w7; bz = bz + (p7.z - bz) * w7; brx = brx + (p7.rx - brx) * w7; bry = bry + (p7.ry - bry) * w7; brz = brz + (p7.rz - brz) * w7; }
+    if (w8 > 0) { bx = bx + (p8.x - bx) * w8; by = by + (p8.y - by) * w8; bz = bz + (p8.z - bz) * w8; brx = brx + (p8.rx - brx) * w8; bry = bry + (p8.ry - bry) * w8; brz = brz + (p8.rz - brz) * w8; }
 
     targetPosition.set(bx, by, bz);
     targetRotation.set(brx, bry, brz);
@@ -74,7 +80,7 @@ export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean, scro
         <pointLight position={[-4, -1, 0]} intensity={4} color="#ff6600" distance={12} />
 
         <Suspense fallback={null}>
-          <ScrollControls pages={7} damping={0.1}>
+          <ScrollControls pages={9} damping={0.18}>
             
             <Scroll>
                <ScrollManager scrollOffset={scrollOffset}>
@@ -87,7 +93,7 @@ export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean, scro
             </Scroll>
             
           </ScrollControls>
-          <Environment preset="city" />
+          <Environment preset="dawn" />
         </Suspense>
 
         <ContactShadows position={[0, -2.2, 0]} opacity={0.6} scale={15} blur={3} far={5} />

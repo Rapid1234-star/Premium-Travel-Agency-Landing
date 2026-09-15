@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, Sparkles } from '@react-three/drei';
+import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 
 export function JetModel() {
@@ -102,7 +102,6 @@ export function JetModel() {
   }, []);
 
   return (
-    <Float floatIntensity={0.3} speed={1.5} rotationIntensity={0.08}>
       <group ref={jetRef} position={[0, -0.3, 0]} scale={0.85} rotation={[0.1, -0.8, -0.05]}>
 
         {/* ══════════════════ FUSELAGE ══════════════════ */}
@@ -317,7 +316,7 @@ export function JetModel() {
               <mesh material={materials.glowCore} position={[0, 0, 0.01]}>
                 <circleGeometry args={[0.15, 32]} />
               </mesh>
-              <pointLight distance={6} intensity={4} color="#ff5500" position={[0, 0, 0.5]} />
+              <pointLight distance={6} intensity={1.5} color="#ff5500" position={[0, 0, 0.5]} />
               <Sparkles
                 count={40}
                 scale={[0.6, 0.6, 2.5]}
@@ -345,6 +344,5 @@ export function JetModel() {
         <pointLight ref={beaconLightRef} position={[-0.5, -0.7, 0]} color="#ff0000" intensity={0} distance={8} />
 
       </group>
-    </Float>
   );
 }

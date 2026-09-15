@@ -1,0 +1,6 @@
+{
+  "name": "LuxFly - Cinematic Flight Booking",
+  "description": "A luxury flight booking landing page with a cinematic 3D jet experience.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

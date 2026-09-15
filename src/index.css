@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* Base font applies universally */
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* Hide default cursor globally for luxury feel ONLY on devices with fine pointers (mouse) */
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+  a, button, input, select, textarea {
+    cursor: none !important;
+  }
+}
+
+/* Glassmorphism static premium border (no animation for performance/luxury feel) */
+.glass-glow {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard focus indicator */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Minimalist Input Animation */
+.minimal-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.minimal-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12px 0;
+  outline: none;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.minimal-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.minimal-input-highlight {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  height: 2px;
+  width: 100%;
+  background: white;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.minimal-input:focus ~ .minimal-input-highlight {
+  transform: translateX(-50%) scaleX(1);
+}

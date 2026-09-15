@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Sparkles } from '@react-three/drei';
+import { Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 
 export function JetModel() {
@@ -11,87 +11,129 @@ export function JetModel() {
   
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-
-    // Realistic Aviation Strobe & Beacon Lights
     if (beaconLightRef.current && beaconMeshRef.current) {
-      // Red beacon blink (slower, rhythmic)
       const beaconOn = Math.sin(t * 4) > 0.5;
       beaconLightRef.current.intensity = beaconOn ? 4 : 0;
       (beaconMeshRef.current.material as THREE.MeshBasicMaterial).color.setHex(beaconOn ? 0xff0000 : 0x330000);
     }
     if (strobeLightRef.current) {
-      // White strobe blink (fast, sharp double-flash pattern)
       const strobeOn = (t % 1.5) < 0.05 || ((t + 0.15) % 1.5) < 0.05;
       strobeLightRef.current.intensity = strobeOn ? 8 : 0;
     }
   });
 
-  const materials = useMemo(() => {
-    return {
-      body: new THREE.MeshPhysicalMaterial({
-        color: '#08080a', // Deep premium off-black
-        metalness: 0.6,
-        roughness: 0.25,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        envMapIntensity: 2.5,
-      }),
-      glass: new THREE.MeshPhysicalMaterial({
-        color: '#000000',
-        metalness: 1.0,
-        roughness: 0.0,
-        clearcoat: 1.0,
-        envMapIntensity: 4.0,
-      }),
-      chrome: new THREE.MeshPhysicalMaterial({
-        color: '#aaaaaa',
-        metalness: 1.0,
-        roughness: 0.1,
-        clearcoat: 1.0,
-      }),
-      glow: new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
-      glowCore: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-      navRed: new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
-      navGreen: new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
-      strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-    };
+  const materials = useMemo(() => ({
+    body: new THREE.MeshPhysicalMaterial({
+      color: '#08080a',
+      metalness: 0.6,
+      roughness: 0.25,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      envMapIntensity: 2.5,
+      // DoubleSide so mirrored geometry (scale -1) renders correctly
+      side: THREE.DoubleSide,
+    }),
+    glass: new THREE.MeshPhysicalMaterial({
+      color: '#000000',
+      metalness: 1.0,
+      roughness: 0.0,
+      clearcoat: 1.0,
+      envMapIntensity: 4.0,
+    }),
+    chrome: new THREE.MeshPhysicalMaterial({
+      color: '#aaaaaa',
+      metalness: 1.0,
+      roughness: 0.1,
+      clearcoat: 1.0,
+    }),
+    glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
+    glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+    navRed:      new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
+    navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
+    strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+  }), []);
+
+  // ─── MAIN WING PLANFORM (ExtrudeGeometry) ───────────────────────────────────
+  // Shape is drawn in the local XY plane:
+  //   X axis → aircraft fore/aft  (positive = toward nose)
+  //   Y axis → spanwise           (positive = toward wingtip)
+  // The shape is extruded 0.055 units along local Z (= wing thickness).
+  // After rotation of -90° around world X, the shape lies flat:
+  //   local X  → world X (fore/aft)  ✓
+  //   local Y  → world Z (spanwise)  ✓
+  //   local Z  → world -Y (thickness goes down from top surface) ✓
+  //
+  // For the left wing we simply wrap in <group scale={[1,1,-1]}>, giving a
+  // mathematically perfect mirror — guaranteed identical silhouette.
+  const mainWingGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    // Gulfstream-style swept wing: ~28° leading-edge sweep, tapered ~0.30 ratio
+    shape.moveTo( 1.15,  0);      // Root Leading Edge
+    shape.lineTo(-1.05,  0);      // Root Trailing Edge
+    shape.lineTo(-2.65,  5.8);    // Tip Trailing Edge  (swept back)
+    shape.lineTo(-0.70,  5.8);    // Tip Leading Edge
+    shape.closePath();
+
+    return new THREE.ExtrudeGeometry(shape, {
+      depth: 0.055,
+      bevelEnabled: true,
+      bevelThickness: 0.020,
+      bevelSize:      0.012,
+      bevelSegments:  4,
+    });
   }, []);
 
-    return (
+  // ─── HORIZONTAL STABILIZER PLANFORM ─────────────────────────────────────────
+  const hStabGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo( 0.50, 0);       // Root LE
+    shape.lineTo(-0.55, 0);       // Root TE
+    shape.lineTo(-1.05, 1.75);    // Tip TE
+    shape.lineTo(-0.18, 1.75);    // Tip LE
+    shape.closePath();
+
+    return new THREE.ExtrudeGeometry(shape, {
+      depth: 0.035,
+      bevelEnabled: true,
+      bevelThickness: 0.012,
+      bevelSize:      0.008,
+      bevelSegments:  3,
+    });
+  }, []);
+
+  return (
+    <Float floatIntensity={0.3} speed={1.5} rotationIntensity={0.08}>
       <group ref={jetRef} position={[0, -0.3, 0]} scale={0.85} rotation={[0.1, -0.8, -0.05]}>
-        
-        {/* ==================== FUSELAGE ==================== */}
-        {/* Main Body (More aerodynamic blending) */}
+
+        {/* ══════════════════ FUSELAGE ══════════════════ */}
         <mesh material={materials.body} scale={[4.8, 0.52, 0.52]} castShadow receiveShadow>
           <sphereGeometry args={[1, 64, 64]} />
         </mesh>
 
-        {/* Nose Cone (Sharper, elongated) */}
+        {/* Nose cone */}
         <mesh material={materials.body} position={[3.8, -0.08, 0]} scale={[1.8, 0.42, 0.42]} castShadow receiveShadow>
           <sphereGeometry args={[1, 64, 64]} />
         </mesh>
-        
-        {/* Radome Tip (Subtle panel line separation) */}
+
+        {/* Radome tip */}
         <mesh material={materials.chrome} position={[5.55, -0.12, 0]} scale={[0.05, 0.15, 0.15]}>
           <sphereGeometry args={[1, 16, 16]} />
         </mesh>
 
-        {/* Wing Root Fairing (The smooth blend between wing and body) */}
-        <mesh material={materials.body} position={[0.2, -0.4, 0]} scale={[1.8, 0.25, 1.2]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 64, 64]} />
+        {/* Wing root fairing (smooth blend fuselage ↔ wing) */}
+        <mesh material={materials.body} position={[0.0, -0.37, 0]} scale={[2.4, 0.14, 0.68]} castShadow receiveShadow>
+          <sphereGeometry args={[1, 32, 32]} />
         </mesh>
 
-        {/* ==================== COCKPIT ==================== */}
+        {/* ══════════════════ COCKPIT ══════════════════ */}
         <group position={[3.6, 0.2, 0]} rotation={[0, 0, -0.18]}>
           <mesh material={materials.glass} scale={[0.85, 0.25, 0.38]}>
             <sphereGeometry args={[1, 32, 32]} />
           </mesh>
-          {/* Central Mullion */}
           <mesh material={materials.body} position={[0.4, 0, 0]} scale={[0.06, 0.28, 0.42]}>
             <boxGeometry args={[1, 1, 1]} />
           </mesh>
-          {/* Side Frames */}
-          <mesh material={materials.body} position={[0, 0, 0.18]} rotation={[0, 0.4, 0]} scale={[0.9, 0.26, 0.02]}>
+          <mesh material={materials.body} position={[0, 0,  0.18]} rotation={[0,  0.4, 0]} scale={[0.9, 0.26, 0.02]}>
             <boxGeometry args={[1, 1, 1]} />
           </mesh>
           <mesh material={materials.body} position={[0, 0, -0.18]} rotation={[0, -0.4, 0]} scale={[0.9, 0.26, 0.02]}>
@@ -99,129 +141,157 @@ export function JetModel() {
           </mesh>
         </group>
 
-        {/* ==================== PASSENGER WINDOWS ==================== */}
-        {/* Slanted, iconic Gulfstream-style oval windows with chrome rims */}
+        {/* ══════════════════ PASSENGER WINDOWS ══════════════════ */}
         {[...Array(6)].map((_, i) => (
           <group key={`win-${i}`} position={[1.8 - i * 0.55, 0.1, 0]}>
-            {/* Right Window */}
-            <mesh material={materials.chrome} position={[0, 0, 0.51]} scale={[0.18, 0.22, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.chrome} position={[0, 0,  0.51]} scale={[0.18, 0.22, 0.05]} rotation={[0, 0, 0.1]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            <mesh material={materials.glass} position={[0, 0, 0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.glass}  position={[0, 0,  0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            
-            {/* Left Window */}
             <mesh material={materials.chrome} position={[0, 0, -0.51]} scale={[0.18, 0.22, 0.05]} rotation={[0, 0, 0.1]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            <mesh material={materials.glass} position={[0, 0, -0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
+            <mesh material={materials.glass}  position={[0, 0, -0.52]} scale={[0.15, 0.19, 0.05]} rotation={[0, 0, 0.1]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
           </group>
         ))}
 
-        {/* ==================== WINGS & DETAILS ==================== */}
-        {/* Right Wing */}
-        <group position={[-0.5, -0.15, 0]}>
-          <mesh material={materials.body} position={[0, 0, 2.8]} scale={[1.6, 0.035, 4.2]} rotation={[0.05, -0.65, 0]} castShadow receiveShadow>
-            <sphereGeometry args={[1, 64, 64]} />
-          </mesh>
-          {/* Flap Track Fairings (The bullets under the wing) */}
-          {[1.0, 1.8, 2.6].map((z, i) => (
-            <mesh key={`flap-r-${i}`} material={materials.body} position={[-1.2 - (i*0.2), -0.08, z]} scale={[0.4, 0.05, 0.05]} castShadow>
-              <sphereGeometry args={[1, 16, 16]} />
-            </mesh>
-          ))}
-          {/* Right Winglet */}
-          <mesh material={materials.body} position={[-2.2, 0.45, 6.0]} scale={[0.4, 0.8, 0.02]} rotation={[0.2, -0.65, -0.6]} castShadow receiveShadow>
-            <sphereGeometry args={[1, 32, 32]} />
-          </mesh>
-          {/* Right Nav Light (Green) */}
-          <mesh material={materials.navGreen} position={[-1.9, 0.05, 6.1]}>
-            <sphereGeometry args={[0.05, 16, 16]} />
-          </mesh>
-          <pointLight position={[-1.9, 0.05, 6.1]} color="#00ff00" intensity={2} distance={2} />
-        </group>
-        
-        {/* Left Wing */}
-        <group position={[-0.5, -0.15, 0]}>
-          <mesh material={materials.body} position={[0, 0, -2.8]} scale={[1.6, 0.035, 4.2]} rotation={[-0.05, 0.65, 0]} castShadow receiveShadow>
-            <sphereGeometry args={[1, 64, 64]} />
-          </mesh>
-          {/* Flap Track Fairings */}
-          {[1.0, 1.8, 2.6].map((z, i) => (
-            <mesh key={`flap-l-${i}`} material={materials.body} position={[-1.2 - (i*0.2), -0.08, -z]} scale={[0.4, 0.05, 0.05]} castShadow>
-              <sphereGeometry args={[1, 16, 16]} />
-            </mesh>
-          ))}
-          {/* Left Winglet */}
-          <mesh material={materials.body} position={[-2.2, 0.45, -6.0]} scale={[0.4, 0.8, 0.02]} rotation={[-0.2, 0.65, -0.6]} castShadow receiveShadow>
-            <sphereGeometry args={[1, 32, 32]} />
-          </mesh>
-          {/* Left Nav Light (Red) */}
-          <mesh material={materials.navRed} position={[-1.9, 0.05, -6.1]}>
-            <sphereGeometry args={[0.05, 16, 16]} />
-          </mesh>
-          <pointLight position={[-1.9, 0.05, -6.1]} color="#ff0000" intensity={2} distance={2} />
-        </group>
+        {/* ══════════════════ MAIN WINGS (Perfectly Mirrored) ══════════════════ */}
+        {([1, -1] as const).map((side) => (
+          <group key={`wing-${side}`} scale={[1, 1, side]}>
 
-        {/* ==================== TAIL SECTION ==================== */}
-        {/* Dorsal Fin (The sloping base of the tail) */}
+            {/* Main wing surface — proper swept tapered planform */}
+            <group rotation={[Math.PI / 2, 0, 0]} position={[-0.05, -0.22, 0.48]}>
+              <mesh
+                geometry={mainWingGeo}
+                material={materials.body}
+                castShadow
+                receiveShadow
+              />
+              {/* Premium Chrome Leading Edge (De-icing boot) */}
+              <mesh
+                material={materials.chrome}
+                position={[0.225, 2.9, 0.025]}
+                rotation={[0, 0, Math.atan2(1.85, 5.8)]}
+                castShadow
+              >
+                {/* Length 6.1, radius 0.04 to perfectly hug the leading edge */}
+                <cylinderGeometry args={[0.02, 0.045, 6.15, 16]} />
+              </mesh>
+            </group>
+
+            {/* Winglet — sleek, blended, swept upward and backward */}
+            <group position={[-1.75, 0.15, 6.25]} rotation={[0.08, 0.10, -0.40]}>
+              <mesh material={materials.body} scale={[0.44, 0.78, 0.026]} castShadow>
+                <boxGeometry args={[1, 1, 1]} />
+              </mesh>
+              {/* Chrome trim on the winglet leading edge */}
+              <mesh material={materials.chrome} position={[0.22, 0, 0]} scale={[0.04, 0.78, 0.028]} castShadow>
+                <cylinderGeometry args={[1, 1, 1, 16]} />
+              </mesh>
+            </group>
+
+            {/* Flap-track fairings (Aerodynamic tear-drop bullet shapes) */}
+            {([1.6, 2.8, 4.0] as const).map((z, i) => (
+              <group key={`flap-${i}`} position={[-0.4 - i * 0.45, -0.28, z + 0.5]}>
+                <mesh material={materials.body} scale={[0.45, 0.065, 0.065]} castShadow>
+                  <sphereGeometry args={[1, 32, 32]} />
+                </mesh>
+                {/* Chrome accent on the back of the flap tracks */}
+                <mesh material={materials.chrome} position={[-0.22, 0, 0]} scale={[0.05, 0.05, 0.05]} castShadow>
+                  <sphereGeometry args={[1, 16, 16]} />
+                </mesh>
+              </group>
+            ))}
+
+            {/* Navigation light */}
+            <mesh
+              material={side === 1 ? materials.navGreen : materials.navRed}
+              position={[-0.85, -0.20, 6.26]}
+            >
+              <sphereGeometry args={[0.055, 16, 16]} />
+            </mesh>
+            <pointLight
+              position={[-0.85, -0.20, 6.26]}
+              color={side === 1 ? '#00ff00' : '#ff0000'}
+              intensity={2}
+              distance={2}
+            />
+          </group>
+        ))}
+
+        {/* ══════════════════ TAIL SECTION ══════════════════ */}
+        {/* Dorsal fin base */}
         <mesh material={materials.body} position={[-2.8, 0.5, 0]} scale={[1.2, 0.35, 0.06]} rotation={[0, 0, -0.2]}>
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
-        {/* Vertical Stabilizer */}
+        {/* Vertical stabilizer */}
         <mesh material={materials.body} position={[-3.8, 1.2, 0]} scale={[1.2, 1.6, 0.05]} rotation={[0, 0, -0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
-        {/* Tail Bullet Fairing */}
+        {/* Tail bullet fairing */}
         <mesh material={materials.body} position={[-4.8, 2.0, 0]} scale={[0.8, 0.1, 0.1]}>
           <sphereGeometry args={[1, 32, 32]} />
         </mesh>
-        {/* Strobe Light (Tail) */}
+        {/* Tail strobe */}
         <mesh material={materials.strobeWhite} position={[-5.6, 2.0, 0]}>
           <sphereGeometry args={[0.06, 16, 16]} />
         </mesh>
         <pointLight ref={strobeLightRef} position={[-5.6, 2.0, 0]} color="#ffffff" intensity={0} distance={10} />
-        
-        {/* Horizontal Stabilizers */}
-        <mesh material={materials.body} position={[-4.6, 2.0, 1.1]} scale={[0.7, 0.025, 1.6]} rotation={[0, -0.5, 0]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 64, 64]} />
-        </mesh>
-        <mesh material={materials.body} position={[-4.6, 2.0, -1.1]} scale={[0.7, 0.025, 1.6]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 64, 64]} />
-        </mesh>
 
-        {/* ==================== ENGINES (Tapered Nacelles) ==================== */}
-        {[1, -1].map((side) => (
-          <group key={side} position={[-2.9, 0.45, 0.85 * side]}>
+        {/* Horizontal stabilizers — with premium chrome leading edge */}
+        {([1, -1] as const).map((side) => (
+          <group key={`hstab-${side}`} scale={[1, 1, side]}>
+            <group rotation={[Math.PI / 2, 0, 0]} position={[-4.55, 1.97, 0.12]}>
+              <mesh
+                geometry={hStabGeo}
+                material={materials.body}
+                castShadow
+                receiveShadow
+              />
+              {/* H-Stab Chrome Leading Edge */}
+              <mesh
+                material={materials.chrome}
+                // Midpoint of LE: (0.50 + -0.18)/2 = 0.16, (0 + 1.75)/2 = 0.875
+                position={[0.16, 0.875, 0.017]}
+                // atan2(dx, dy) = atan2(0.68, 1.75)
+                rotation={[0, 0, Math.atan2(0.68, 1.75)]}
+                castShadow
+              >
+                {/* Length = sqrt(0.68^2 + 1.75^2) = 1.88 */}
+                <cylinderGeometry args={[0.012, 0.018, 1.9, 16]} />
+              </mesh>
+            </group>
+          </group>
+        ))}
+
+        {/* ══════════════════ ENGINES ══════════════════ */}
+        {([1, -1] as const).map((side) => (
+          <group key={`engine-${side}`} position={[-2.9, 0.45, 0.85 * side]}>
             {/* Pylon */}
             <mesh material={materials.body} position={[0.4, -0.1, -0.35 * side]} scale={[1.0, 0.08, 0.5]} rotation={[0, 0, -0.1]}>
               <sphereGeometry args={[1, 32, 32]} />
             </mesh>
-            
-            {/* Main Tapered Engine Nacelle */}
+            {/* Tapered nacelle */}
             <mesh material={materials.body} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
               <cylinderGeometry args={[0.26, 0.35, 2.2, 64]} />
             </mesh>
-            
-            {/* Front Intake Chrome Lip */}
-            <mesh material={materials.chrome} position={[1.1, 0, 0]} rotation={[0, Math.PI/2, 0]}>
+            {/* Intake chrome lip */}
+            <mesh material={materials.chrome} position={[1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
               <torusGeometry args={[0.33, 0.05, 32, 64]} />
             </mesh>
-            
-            {/* Dark Intake Void */}
+            {/* Intake void */}
             <mesh material={materials.glass} position={[1.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[0.32, 0.32, 0.05, 32]} />
             </mesh>
-
-            {/* Rear Exhaust Lip */}
-            <mesh material={materials.chrome} position={[-1.1, 0, 0]} rotation={[0, Math.PI/2, 0]}>
+            {/* Exhaust lip */}
+            <mesh material={materials.chrome} position={[-1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
               <torusGeometry args={[0.24, 0.025, 32, 64]} />
             </mesh>
-
-            {/* Engine Core & Exhaust Glow */}
+            {/* Engine core glow + sparkles */}
             <group position={[-1.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
               <mesh material={materials.glow}>
                 <ringGeometry args={[0.15, 0.23, 32]} />
@@ -229,38 +299,34 @@ export function JetModel() {
               <mesh material={materials.glowCore} position={[0, 0, 0.01]}>
                 <circleGeometry args={[0.15, 32]} />
               </mesh>
-              {/* Point light casting glow onto the tail */}
               <pointLight distance={6} intensity={4} color="#ff5500" position={[0, 0, 0.5]} />
-              
-              {/* Sparkles Particle System for Heat/Exhaust */}
-              <Sparkles 
-                count={40} 
-                scale={[0.6, 0.6, 2.5]} 
-                size={3} 
-                speed={0.8} 
-                opacity={0.6} 
-                color="#ffaa00" 
-                position={[0, 0, 1.2]} 
+              <Sparkles
+                count={40}
+                scale={[0.6, 0.6, 2.5]}
+                size={3}
+                speed={0.8}
+                opacity={0.6}
+                color="#ffaa00"
+                position={[0, 0, 1.2]}
                 noise={1}
               />
             </group>
           </group>
         ))}
 
-        {/* ==================== ANTENNAS & BEACONS ==================== */}
-        {/* Top Antennas */}
-        <mesh material={materials.body} position={[1.2, 0.65, 0]} scale={[0.15, 0.2, 0.015]} rotation={[0, 0, -0.6]}>
+        {/* ══════════════════ ANTENNAS & BEACONS ══════════════════ */}
+        <mesh material={materials.body} position={[ 1.2, 0.65, 0]} scale={[0.15, 0.20, 0.015]} rotation={[0, 0, -0.6]}>
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
-        <mesh material={materials.body} position={[-0.8, 0.58, 0]} scale={[0.1, 0.15, 0.015]} rotation={[0, 0, -0.6]}>
+        <mesh material={materials.body} position={[-0.8, 0.58, 0]} scale={[0.10, 0.15, 0.015]} rotation={[0, 0, -0.6]}>
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
-        {/* Belly Beacon Light */}
         <mesh ref={beaconMeshRef} material={materials.navRed} position={[-0.5, -0.5, 0]}>
           <sphereGeometry args={[0.08, 16, 16]} />
         </mesh>
         <pointLight ref={beaconLightRef} position={[-0.5, -0.7, 0]} color="#ff0000" intensity={0} distance={8} />
 
       </group>
-    );
+    </Float>
+  );
 }

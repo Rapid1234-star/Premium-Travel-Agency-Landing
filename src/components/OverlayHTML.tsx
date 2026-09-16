@@ -59,10 +59,10 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
   };
 
   return (
-    <div className="w-screen relative font-sans text-black" style={{ height: '900vh' }}>
+    <div className="w-screen relative font-sans text-black" style={{ height: '900svh' }}>
       
       {/* Scroll Progress Indicator */}
-      <div className="fixed right-2 top-[20vh] bottom-[20vh] w-[1px] md:w-[2px] bg-white/10 z-50 rounded-full">
+      <div className="fixed right-2 top-[20svh] bottom-[20svh] w-[1px] md:w-[2px] bg-white/10 z-50 rounded-full">
         <div 
           className="w-full bg-[#A16207] rounded-full origin-top"
           style={{ height: progressPct }}

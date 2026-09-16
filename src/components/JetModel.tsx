@@ -2,82 +2,66 @@ import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import type { DeviceTier } from '../lib/deviceTier';
 
-export function JetModel() {
+export function JetModel({ tier = 'full' }: { tier?: DeviceTier }) {
   const jetRef = useRef<THREE.Group>(null);
   const beaconLightRef = useRef<THREE.PointLight>(null);
   const strobeLightRef = useRef<THREE.PointLight>(null);
   const beaconMeshRef = useRef<THREE.Mesh>(null);
   const [mobileScale, setMobileScale] = useState(0.85);
-  const [isMobile, setIsMobile] = useState(false);
+  const isLite = tier === 'lite';
 
   useEffect(() => {
     const updateScale = () => {
       const w = window.innerWidth;
-      if (w < 480) setMobileScale(0.4);       // Small phones
-      else if (w < 640) setMobileScale(0.5);  // Large phones
-      else if (w < 768) setMobileScale(0.55); // Mobile landscape
-      else if (w < 1024) setMobileScale(0.7); // Tablets
-      else setMobileScale(0.85);              // Desktop
-      
-      setIsMobile(w < 768);
+      // Lite phones: larger on-screen presence (was too tiny at 0.4)
+      if (isLite) {
+        if (w < 480) setMobileScale(0.55);
+        else if (w < 640) setMobileScale(0.62);
+        else if (w < 900) setMobileScale(0.7);
+        else setMobileScale(0.8);
+        return;
+      }
+      if (w < 480) setMobileScale(0.55);
+      else if (w < 640) setMobileScale(0.62);
+      else if (w < 768) setMobileScale(0.7);
+      else if (w < 1024) setMobileScale(0.78);
+      else setMobileScale(0.85);
     };
     updateScale();
     window.addEventListener('resize', updateScale);
     return () => window.removeEventListener('resize', updateScale);
-  }, []);
+  }, [isLite]);
   
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     if (beaconLightRef.current && beaconMeshRef.current) {
       const beaconOn = Math.sin(t * 4) > 0.5;
-      beaconLightRef.current.intensity = beaconOn ? 4 : 0;
+      beaconLightRef.current.intensity = beaconOn ? (isLite ? 2 : 4) : 0;
       (beaconMeshRef.current.material as THREE.MeshBasicMaterial).color.setHex(beaconOn ? 0xff0000 : 0x330000);
     }
     if (strobeLightRef.current) {
       const strobeOn = (t % 1.5) < 0.05 || ((t + 0.15) % 1.5) < 0.05;
-      strobeLightRef.current.intensity = strobeOn ? 8 : 0;
+      strobeLightRef.current.intensity = strobeOn ? (isLite ? 4 : 8) : 0;
     }
   });
 
-  const sparkleCount = isMobile ? 8 : 28;
+  const sparkleCount = isLite ? 0 : 28;
+  const segHi = isLite ? 32 : 64;
+  const segMid = isLite ? 16 : 32;
+  const segLo = isLite ? 12 : 16;
 
+  // Lite keeps Physical/clearcoat — sharpness comes from DPR + materials, not Standard downgrade
   const materials = useMemo(() => {
-    if (isMobile) {
-      return {
-        body: new THREE.MeshStandardMaterial({
-          color: '#08080a',
-          metalness: 0.55,
-          roughness: 0.3,
-          envMapIntensity: 1.6,
-          side: THREE.DoubleSide,
-        }),
-        glass: new THREE.MeshStandardMaterial({
-          color: '#000000',
-          metalness: 0.9,
-          roughness: 0.05,
-          envMapIntensity: 2.2,
-        }),
-        chrome: new THREE.MeshStandardMaterial({
-          color: '#aaaaaa',
-          metalness: 1.0,
-          roughness: 0.15,
-        }),
-        glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
-        glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-        navRed:      new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
-        navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
-        strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-      };
-    }
     return {
       body: new THREE.MeshPhysicalMaterial({
         color: '#08080a',
         metalness: 0.6,
-        roughness: 0.25,
+        roughness: isLite ? 0.28 : 0.25,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        envMapIntensity: 2.5,
+        clearcoatRoughness: isLite ? 0.08 : 0.05,
+        envMapIntensity: isLite ? 2.0 : 2.5,
         side: THREE.DoubleSide,
       }),
       glass: new THREE.MeshPhysicalMaterial({
@@ -85,12 +69,12 @@ export function JetModel() {
         metalness: 1.0,
         roughness: 0.0,
         clearcoat: 1.0,
-        envMapIntensity: 4.0,
+        envMapIntensity: isLite ? 3.0 : 4.0,
       }),
       chrome: new THREE.MeshStandardMaterial({
         color: '#aaaaaa',
         metalness: 1.0,
-        roughness: 0.1,
+        roughness: isLite ? 0.15 : 0.1,
       }),
       glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
       glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
@@ -98,7 +82,7 @@ export function JetModel() {
       navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
       strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
     };
-  }, [isMobile]);
+  }, [isLite]);
 
   // ─── MAIN WING PLANFORM (ExtrudeGeometry) ───────────────────────────────────
   // Shape is drawn in the local XY plane:
@@ -153,22 +137,22 @@ export function JetModel() {
 
         {/* ══════════════════ FUSELAGE ══════════════════ */}
         <mesh material={materials.body} scale={[4.8, 0.52, 0.52]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 64, 64]} />
+          <sphereGeometry args={[1, segHi, segHi]} />
         </mesh>
 
         {/* Nose cone */}
         <mesh material={materials.body} position={[3.8, -0.08, 0]} scale={[1.8, 0.42, 0.42]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 64, 64]} />
+          <sphereGeometry args={[1, segHi, segHi]} />
         </mesh>
 
         {/* Radome tip */}
         <mesh material={materials.chrome} position={[5.55, -0.12, 0]} scale={[0.05, 0.15, 0.15]}>
-          <sphereGeometry args={[1, 16, 16]} />
+          <sphereGeometry args={[1, segLo, segLo]} />
         </mesh>
 
         {/* Wing box belly fairing */}
         <mesh material={materials.body} position={[-0.5, -0.42, 0]} scale={[2.8, 0.15, 0.65]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 32, 32]} />
+          <sphereGeometry args={[1, segMid, segMid]} />
         </mesh>
         {/* Subtle underbelly structural line */}
         <mesh material={materials.chrome} position={[-0.5, -0.56, 0]} scale={[2.5, 0.01, 0.02]}>
@@ -178,7 +162,7 @@ export function JetModel() {
         {/* ══════════════════ COCKPIT ══════════════════ */}
         <group position={[3.6, 0.18, 0]} rotation={[0, 0, -0.22]}>
           <mesh material={materials.glass} scale={[0.9, 0.22, 0.35]}>
-            <sphereGeometry args={[1, 32, 32]} />
+            <sphereGeometry args={[1, segMid, segMid]} />
           </mesh>
           {/* Central Chrome Mullion */}
           <mesh material={materials.chrome} position={[0.45, 0, 0]} scale={[0.04, 0.25, 0.38]}>
@@ -197,16 +181,16 @@ export function JetModel() {
         {[...Array(7)].map((_, i) => (
           <group key={`win-${i}`} position={[1.9 - i * 0.5, 0.12, 0]}>
             <mesh material={materials.chrome} position={[0, 0,  0.51]} scale={[0.22, 0.16, 0.05]} rotation={[0, 0, 0.05]}>
-              <sphereGeometry args={[1, 32, 32]} />
+              <sphereGeometry args={[1, segMid, segMid]} />
             </mesh>
             <mesh material={materials.glass}  position={[0, 0,  0.52]} scale={[0.19, 0.13, 0.05]} rotation={[0, 0, 0.05]}>
-              <sphereGeometry args={[1, 32, 32]} />
+              <sphereGeometry args={[1, segMid, segMid]} />
             </mesh>
             <mesh material={materials.chrome} position={[0, 0, -0.51]} scale={[0.22, 0.16, 0.05]} rotation={[0, 0, 0.05]}>
-              <sphereGeometry args={[1, 32, 32]} />
+              <sphereGeometry args={[1, segMid, segMid]} />
             </mesh>
             <mesh material={materials.glass}  position={[0, 0, -0.52]} scale={[0.19, 0.13, 0.05]} rotation={[0, 0, 0.05]}>
-              <sphereGeometry args={[1, 32, 32]} />
+              <sphereGeometry args={[1, segMid, segMid]} />
             </mesh>
           </group>
         ))}
@@ -231,7 +215,7 @@ export function JetModel() {
                 castShadow
               >
                 {/* Length 6.1, radius 0.04 to perfectly hug the leading edge */}
-                <cylinderGeometry args={[0.02, 0.045, 6.15, 16]} />
+                <cylinderGeometry args={[0.02, 0.045, 6.15, segLo]} />
               </mesh>
             </group>
 
@@ -242,7 +226,7 @@ export function JetModel() {
               </mesh>
               {/* Chrome trim on the winglet leading edge */}
               <mesh material={materials.chrome} position={[0.22, 0, 0]} scale={[0.04, 0.78, 0.028]} castShadow>
-                <cylinderGeometry args={[1, 1, 1, 16]} />
+                <cylinderGeometry args={[1, 1, 1, segLo]} />
               </mesh>
             </group>
 
@@ -250,11 +234,11 @@ export function JetModel() {
             {([1.6, 2.8, 4.0] as const).map((z, i) => (
               <group key={`flap-${i}`} position={[-0.4 - i * 0.45, -0.28, z + 0.5]}>
                 <mesh material={materials.body} scale={[0.45, 0.065, 0.065]} castShadow>
-                  <sphereGeometry args={[1, 32, 32]} />
+                  <sphereGeometry args={[1, segMid, segMid]} />
                 </mesh>
                 {/* Chrome accent on the back of the flap tracks */}
                 <mesh material={materials.chrome} position={[-0.22, 0, 0]} scale={[0.05, 0.05, 0.05]} castShadow>
-                  <sphereGeometry args={[1, 16, 16]} />
+                  <sphereGeometry args={[1, segLo, segLo]} />
                 </mesh>
               </group>
             ))}
@@ -264,14 +248,16 @@ export function JetModel() {
               material={side === 1 ? materials.navGreen : materials.navRed}
               position={[-0.85, -0.20, 6.26]}
             >
-              <sphereGeometry args={[0.055, 16, 16]} />
+              <sphereGeometry args={[0.055, segLo, segLo]} />
             </mesh>
-            <pointLight
-              position={[-0.85, -0.20, 6.26]}
-              color={side === 1 ? '#00ff00' : '#ff0000'}
-              intensity={2}
-              distance={2}
-            />
+            {!isLite && (
+              <pointLight
+                position={[-0.85, -0.20, 6.26]}
+                color={side === 1 ? '#00ff00' : '#ff0000'}
+                intensity={2}
+                distance={2}
+              />
+            )}
           </group>
         ))}
 
@@ -286,15 +272,15 @@ export function JetModel() {
         </mesh>
         {/* T-Tail Bullet Fairing (Aerodynamic pod at top of tail) */}
         <mesh material={materials.body} position={[-4.6, 2.0, 0]} scale={[1.2, 0.12, 0.12]} castShadow receiveShadow>
-          <sphereGeometry args={[1, 32, 32]} />
+          <sphereGeometry args={[1, segMid, segMid]} />
         </mesh>
         {/* Forward chrome tip for bullet fairing */}
         <mesh material={materials.chrome} position={[-3.45, 2.0, 0]} scale={[0.08, 0.11, 0.11]}>
-          <sphereGeometry args={[1, 16, 16]} />
+          <sphereGeometry args={[1, segLo, segLo]} />
         </mesh>
         {/* Tail strobe */}
         <mesh material={materials.strobeWhite} position={[-5.6, 2.0, 0]}>
-          <sphereGeometry args={[0.06, 16, 16]} />
+          <sphereGeometry args={[0.06, segLo, segLo]} />
         </mesh>
         <pointLight ref={strobeLightRef} position={[-5.6, 2.0, 0]} color="#ffffff" intensity={0} distance={10} />
 
@@ -318,7 +304,7 @@ export function JetModel() {
                 castShadow
               >
                 {/* Length = sqrt(0.68^2 + 1.75^2) = 1.88 */}
-                <cylinderGeometry args={[0.012, 0.018, 1.9, 16]} />
+                <cylinderGeometry args={[0.012, 0.018, 1.9, segLo]} />
               </mesh>
             </group>
           </group>
@@ -329,51 +315,53 @@ export function JetModel() {
           <group key={`engine-${side}`} position={[-2.9, 0.45, 0.85 * side]}>
             {/* Pylon */}
             <mesh material={materials.body} position={[0.4, -0.1, -0.35 * side]} scale={[1.0, 0.08, 0.5]} rotation={[0, 0, -0.1]}>
-              <sphereGeometry args={[1, 32, 32]} />
+              <sphereGeometry args={[1, segMid, segMid]} />
             </mesh>
             {/* Tapered nacelle */}
             <mesh material={materials.body} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-              <cylinderGeometry args={[0.26, 0.35, 2.2, 64]} />
+              <cylinderGeometry args={[0.26, 0.35, 2.2, segHi]} />
             </mesh>
             {/* Intake chrome lip */}
             <mesh material={materials.chrome} position={[1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-              <torusGeometry args={[0.33, 0.05, 32, 64]} />
+              <torusGeometry args={[0.33, 0.05, segMid, segHi]} />
             </mesh>
             {/* Metallic Nacelle Band */}
             <mesh material={materials.chrome} position={[0.6, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-              <cylinderGeometry args={[0.34, 0.35, 0.05, 64]} />
+              <cylinderGeometry args={[0.34, 0.35, 0.05, segHi]} />
             </mesh>
             {/* Intake void */}
             <mesh material={materials.glass} position={[1.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.32, 0.32, 0.05, 32]} />
+              <cylinderGeometry args={[0.32, 0.32, 0.05, segMid]} />
             </mesh>
             {/* Engine Fan Spinner Cone */}
             <mesh material={materials.chrome} position={[1.05, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-              <coneGeometry args={[0.1, 0.25, 16]} />
+              <coneGeometry args={[0.1, 0.25, segLo]} />
             </mesh>
             {/* Exhaust lip */}
             <mesh material={materials.chrome} position={[-1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-              <torusGeometry args={[0.24, 0.025, 32, 64]} />
+              <torusGeometry args={[0.24, 0.025, segMid, segHi]} />
             </mesh>
-{/* Engine core glow + sparkles */}
+            {/* Engine core glow + sparkles */}
               <group position={[-1.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
                 <mesh material={materials.glow}>
-                  <ringGeometry args={[0.15, 0.23, 32]} />
+                  <ringGeometry args={[0.15, 0.23, segMid]} />
                 </mesh>
                 <mesh material={materials.glowCore} position={[0, 0, 0.01]}>
-                  <circleGeometry args={[0.15, 32]} />
+                  <circleGeometry args={[0.15, segMid]} />
                 </mesh>
-                <pointLight distance={6} intensity={1.5} color="#ff5500" position={[0, 0, 0.5]} />
-                <Sparkles
-                  count={sparkleCount}
-                  scale={[0.6, 0.6, 2.5]}
-                  size={3}
-                  speed={0.8}
-                  opacity={0.6}
-                  color="#ffaa00"
-                  position={[0, 0, 1.2]}
-                  noise={1}
-                />
+                <pointLight distance={6} intensity={isLite ? 1.1 : 1.5} color="#ff5500" position={[0, 0, 0.5]} />
+                {sparkleCount > 0 && (
+                  <Sparkles
+                    count={sparkleCount}
+                    scale={[0.6, 0.6, 2.5]}
+                    size={3}
+                    speed={0.8}
+                    opacity={0.6}
+                    color="#ffaa00"
+                    position={[0, 0, 1.2]}
+                    noise={1}
+                  />
+                )}
               </group>
           </group>
         ))}
@@ -386,7 +374,7 @@ export function JetModel() {
           <boxGeometry args={[1, 1, 1]} />
         </mesh>
         <mesh ref={beaconMeshRef} material={materials.navRed} position={[-0.5, -0.5, 0]}>
-          <sphereGeometry args={[0.08, 16, 16]} />
+          <sphereGeometry args={[0.08, segLo, segLo]} />
         </mesh>
         <pointLight ref={beaconLightRef} position={[-0.5, -0.7, 0]} color="#ff0000" intensity={0} distance={8} />
 

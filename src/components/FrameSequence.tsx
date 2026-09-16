@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import type { MotionValue } from 'framer-motion';
+import { cappedDprForTier, scrubStepForTier, type DeviceTier } from '../lib/deviceTier';
 
 /** LOCKED — window shade open timing (do not change) */
 export const TOTAL_FRAMES = 280;
@@ -7,48 +8,43 @@ export const SCROLL_START = 0.22;
 export const SCROLL_END = 0.35;
 
 const PRELOAD_SCROLL = 0.10;
-const BATCH_SIZE = 24;
-const LOAD_AHEAD = 40;
-const LOAD_BEHIND = 24;
-/** Pause densify while user is actively scrubbing */
-const SCROLL_IDLE_MS = 180;
-/** Every Nth source frame for scrub (keeps 0.22–0.35 timing) */
-const SCRUB_STEP = 2;
+const BATCH_SIZE = 16;
 
-function getFramePath(index: number, isMobile: boolean): string {
+function getFramePath(index: number, useMobileAssets: boolean): string {
   const padded = String(index + 1).padStart(3, '0');
-  return `/frames/${isMobile ? 'mobile' : 'desktop'}/frame-${padded}.webp`;
-}
-
-function cappedDpr() {
-  // Frames canvas at 1× — cheapest draw, pairs with WebGL at dpr 1
-  return 1;
+  return `/frames/${useMobileAssets ? 'mobile' : 'desktop'}/frame-${padded}.webp`;
 }
 
 /** Map open progress 0–1 → source frame index (stepped for perf). */
-export function progressToFrameIndex(progress: number) {
+export function progressToFrameIndex(progress: number, scrubStep = 2) {
   const clamped = Math.max(0, Math.min(1, progress));
-  const steps = Math.ceil(TOTAL_FRAMES / SCRUB_STEP);
+  const steps = Math.ceil(TOTAL_FRAMES / scrubStep);
   const step = Math.round(clamped * (steps - 1));
-  return Math.min(TOTAL_FRAMES - 1, step * SCRUB_STEP);
+  return Math.min(TOTAL_FRAMES - 1, step * scrubStep);
 }
 
-async function loadBitmap(src: string): Promise<ImageBitmap> {
+async function loadBitmap(src: string, resizeWidth?: number): Promise<ImageBitmap> {
   const res = await fetch(src, { cache: 'force-cache' });
   const blob = await res.blob();
-  return createImageBitmap(blob, {
+  const opts: ImageBitmapOptions = {
     premultiplyAlpha: 'none',
     colorSpaceConversion: 'none',
-  });
+  };
+  if (resizeWidth && resizeWidth > 0) {
+    opts.resizeWidth = resizeWidth;
+    opts.resizeQuality = 'medium';
+  }
+  return createImageBitmap(blob, opts);
 }
 
 function nearestBitmap(
   bitmaps: (ImageBitmap | null)[],
   index: number,
-  radius = 64
+  scrubStep: number,
+  radius = 96
 ): ImageBitmap | null {
   if (bitmaps[index]) return bitmaps[index];
-  for (let d = SCRUB_STEP; d <= radius; d += SCRUB_STEP) {
+  for (let d = scrubStep; d <= radius; d += scrubStep) {
     const a = bitmaps[index - d];
     const b = bitmaps[index + d];
     if (a) return a;
@@ -67,44 +63,38 @@ type FrameSequenceProps = {
   scrollOffset: MotionValue<number>;
   eagerWarm?: boolean;
   onCriticalReady?: () => void;
+  tier?: DeviceTier;
 };
 
 export function FrameSequence({
   scrollOffset,
   eagerWarm = true,
   onCriticalReady,
+  tier = 'full',
 }: FrameSequenceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const bitmapsRef = useRef<(ImageBitmap | null)[]>(new Array(TOTAL_FRAMES).fill(null));
   const currentIndexRef = useRef(-1);
-  const loadingBatchRef = useRef(false);
   const startedRef = useRef(false);
   const criticalNotifiedRef = useRef(false);
   const drawRafRef = useRef(0);
   const pendingIndexRef = useRef(-1);
-  const scrollingRef = useRef(false);
-  const idleTimerRef = useRef(0);
-  const densifyQueueRef = useRef<number[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
+  const scrubStepRef = useRef(scrubStepForTier(tier));
+  const tierRef = useRef(tier);
   const onReadyRef = useRef(onCriticalReady);
   onReadyRef.current = onCriticalReady;
+  tierRef.current = tier;
+  scrubStepRef.current = scrubStepForTier(tier);
 
-  useEffect(() => {
-    const sync = () => setIsMobile(window.innerWidth < 768);
-    sync();
-    window.addEventListener('resize', sync);
-    return () => window.removeEventListener('resize', sync);
-  }, []);
+  const useMobileAssets = tier === 'lite' || (typeof window !== 'undefined' && window.innerWidth < 768);
 
   const ensureCtx = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     if (!ctxRef.current) {
-      ctxRef.current = canvas.getContext('2d', {
-        alpha: false,
-        desynchronized: true,
-      });
+      // Avoid desynchronized on iOS — can tear
+      ctxRef.current = canvas.getContext('2d', { alpha: false });
     }
     return ctxRef.current;
   }, []);
@@ -112,7 +102,7 @@ export function FrameSequence({
   const resizeCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dpr = cappedDpr();
+    const dpr = cappedDprForTier(tierRef.current);
     const displayW = canvas.clientWidth;
     const displayH = canvas.clientHeight;
     const tw = Math.max(1, Math.round(displayW * dpr));
@@ -128,12 +118,12 @@ export function FrameSequence({
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     return () => window.removeEventListener('resize', resizeCanvas);
-  }, [resizeCanvas]);
+  }, [resizeCanvas, tier]);
 
   const drawFrame = useCallback((index: number) => {
     const canvas = canvasRef.current;
     const ctx = ensureCtx();
-    const bmp = nearestBitmap(bitmapsRef.current, index);
+    const bmp = nearestBitmap(bitmapsRef.current, index, scrubStepRef.current);
     if (!canvas || !ctx || !bmp) return;
     ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
   }, [ensureCtx]);
@@ -149,92 +139,73 @@ export function FrameSequence({
     });
   }, [drawFrame]);
 
-  const loadIndices = useCallback(async (indices: number[], cancelled: () => boolean) => {
-    const unique = [...new Set(indices)].filter(
-      i => i >= 0 && i < TOTAL_FRAMES && !bitmapsRef.current[i]
-    );
-    if (!unique.length) return;
-
-    // Parallel batches to avoid saturating main thread
-    for (let start = 0; start < unique.length; start += BATCH_SIZE) {
-      if (cancelled()) return;
-      const slice = unique.slice(start, start + BATCH_SIZE);
-      await Promise.allSettled(
-        slice.map(async i => {
-          try {
-            const bmp = await loadBitmap(getFramePath(i, isMobile));
-            if (cancelled()) {
-              bmp.close();
-              return;
-            }
-            const prev = bitmapsRef.current[i];
-            bitmapsRef.current[i] = bmp;
-            if (prev) prev.close();
-          } catch { /* ignore */ }
-        })
+  const loadIndices = useCallback(
+    async (indices: number[], cancelled: () => boolean, resizeWidth: number) => {
+      const unique = [...new Set(indices)].filter(
+        (i) => i >= 0 && i < TOTAL_FRAMES && !bitmapsRef.current[i]
       );
-    }
-  }, [isMobile]);
+      if (!unique.length) return;
 
-  const pumpDensify = useCallback(async (cancelled: () => boolean) => {
-    if (cancelled() || loadingBatchRef.current || scrollingRef.current) return;
-    const q = densifyQueueRef.current;
-    if (!q.length) return;
+      for (let start = 0; start < unique.length; start += BATCH_SIZE) {
+        if (cancelled()) return;
+        const slice = unique.slice(start, start + BATCH_SIZE);
+        await Promise.allSettled(
+          slice.map(async (i) => {
+            try {
+              const bmp = await loadBitmap(getFramePath(i, useMobileAssets), resizeWidth);
+              if (cancelled()) {
+                bmp.close();
+                return;
+              }
+              const prev = bitmapsRef.current[i];
+              bitmapsRef.current[i] = bmp;
+              if (prev) prev.close();
+            } catch {
+              /* ignore */
+            }
+          })
+        );
+      }
+    },
+    [useMobileAssets]
+  );
 
-    const batch = q.splice(0, BATCH_SIZE);
-    loadingBatchRef.current = true;
-    await loadIndices(batch, cancelled);
-    loadingBatchRef.current = false;
-
-    // Never redraw from densify while scrubbing — avoids hitching
-    if (!scrollingRef.current && currentIndexRef.current >= 0) {
-      scheduleDraw(currentIndexRef.current);
-    }
-
-    if (!cancelled() && densifyQueueRef.current.length && !scrollingRef.current) {
-      window.setTimeout(() => void pumpDensify(cancelled), 16);
-    }
-  }, [loadIndices, scheduleDraw]);
-
-  // Eager warm: full scrub grid before ready → densify odd frames on idle
+  // Eager warm: scrub grid only — no densify of unused odd frames
   useEffect(() => {
     let cancelled = false;
     const isCancelled = () => cancelled;
+    startedRef.current = false;
+    criticalNotifiedRef.current = false;
 
     const startPreload = async () => {
       if (startedRef.current) return;
       startedRef.current = true;
+      resizeCanvas();
+      const resizeWidth = canvasRef.current?.width || Math.round(window.innerWidth * cappedDprForTier(tier));
+      const step = scrubStepForTier(tier);
 
       try {
-        const poster = await loadBitmap(getFramePath(0, isMobile));
+        const poster = await loadBitmap(getFramePath(0, useMobileAssets), resizeWidth);
         if (cancelled) {
           poster.close();
           return;
         }
         bitmapsRef.current[0] = poster;
         scheduleDraw(0);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
-      // Full scrub-step grid BEFORE critical ready (no holes mid-open)
       const scrubGrid: number[] = [];
-      for (let i = 0; i < TOTAL_FRAMES; i += SCRUB_STEP) scrubGrid.push(i);
-      // Always include last frame
+      for (let i = 0; i < TOTAL_FRAMES; i += step) scrubGrid.push(i);
       if (!scrubGrid.includes(TOTAL_FRAMES - 1)) scrubGrid.push(TOTAL_FRAMES - 1);
 
-      await loadIndices(scrubGrid, isCancelled);
+      await loadIndices(scrubGrid, isCancelled, resizeWidth);
 
       if (!criticalNotifiedRef.current) {
         criticalNotifiedRef.current = true;
         onReadyRef.current?.();
       }
-
-      // Remaining odd frames densify only when idle
-      const queue: number[] = [];
-      for (let i = 0; i < TOTAL_FRAMES; i++) {
-        if (!bitmapsRef.current[i]) queue.push(i);
-      }
-      densifyQueueRef.current = queue;
-      void pumpDensify(isCancelled);
     };
 
     if (eagerWarm) {
@@ -259,58 +230,30 @@ export function FrameSequence({
         bitmapsRef.current[i] = null;
       }
     };
-  }, [isMobile, scrollOffset, scheduleDraw, loadIndices, pumpDensify, eagerWarm]);
+  }, [tier, scrollOffset, scheduleDraw, loadIndices, eagerWarm, useMobileAssets, resizeCanvas]);
 
-  // Scroll scrub — pause densify while moving; resume on idle
+  // Scroll scrub
   useEffect(() => {
-    let cancelled = false;
-
-    const markScrolling = () => {
-      scrollingRef.current = true;
-      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = window.setTimeout(() => {
-        scrollingRef.current = false;
-        void pumpDensify(() => cancelled);
-      }, SCROLL_IDLE_MS);
-    };
-
-    const ensureNeighborhood = (frameIndex: number) => {
-      // Only enqueue — never await on scroll path
-      if (scrollingRef.current) return;
-      if (loadingBatchRef.current) return;
-      const q = densifyQueueRef.current;
-      const add = (i: number) => {
-        if (i >= 0 && i < TOTAL_FRAMES && !bitmapsRef.current[i] && !q.includes(i)) {
-          q.unshift(i);
-        }
-      };
-      for (let i = frameIndex; i <= frameIndex + LOAD_AHEAD && i < TOTAL_FRAMES; i += SCRUB_STEP) add(i);
-      for (let i = frameIndex; i >= frameIndex - LOAD_BEHIND && i >= 0; i -= SCRUB_STEP) add(i);
-    };
-
     const unsubscribe = scrollOffset.on('change', (latest) => {
-      markScrolling();
-
-      const progress = Math.max(0, Math.min(1, (latest - SCROLL_START) / (SCROLL_END - SCROLL_START)));
-      const frameIndex = progressToFrameIndex(progress);
-      scheduleDraw(frameIndex);
-
-      if (latest >= PRELOAD_SCROLL || eagerWarm) {
-        ensureNeighborhood(frameIndex);
-      }
+      const progress = Math.max(
+        0,
+        Math.min(1, (latest - SCROLL_START) / (SCROLL_END - SCROLL_START))
+      );
+      scheduleDraw(progressToFrameIndex(progress, scrubStepRef.current));
     });
 
     const latest = scrollOffset.get();
-    const progress = Math.max(0, Math.min(1, (latest - SCROLL_START) / (SCROLL_END - SCROLL_START)));
-    scheduleDraw(progressToFrameIndex(progress));
+    const progress = Math.max(
+      0,
+      Math.min(1, (latest - SCROLL_START) / (SCROLL_END - SCROLL_START))
+    );
+    scheduleDraw(progressToFrameIndex(progress, scrubStepRef.current));
 
     return () => {
-      cancelled = true;
       unsubscribe();
       if (drawRafRef.current) cancelAnimationFrame(drawRafRef.current);
-      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
     };
-  }, [scrollOffset, scheduleDraw, pumpDensify, eagerWarm]);
+  }, [scrollOffset, scheduleDraw]);
 
   useEffect(() => {
     const onResize = () => {

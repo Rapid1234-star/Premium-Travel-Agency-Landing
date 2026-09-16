@@ -4,8 +4,15 @@ import { useProgress } from '@react-three/drei';
 import { JetScene } from './components/JetScene';
 import { CustomCursor } from './components/CustomCursor';
 import { FrameSequence } from './components/FrameSequence';
+import { StaticHero } from './components/StaticHero';
+import { StaticScrollHost } from './components/StaticScrollHost';
+import { OverlayHTML } from './components/OverlayHTML';
+import { DeviceTierProvider, useDeviceTier } from './hooks/useDeviceTier';
+import { usesCinematicEffects } from './lib/deviceTier';
 
-export default function App() {
+function LuxFlyApp() {
+  const { tier } = useDeviceTier();
+  const cinematic = usesCinematicEffects(tier);
   const [isLoading, setIsLoading] = useState(true);
   const [minTimeDone, setMinTimeDone] = useState(false);
   const [framesReady, setFramesReady] = useState(false);
@@ -13,22 +20,15 @@ export default function App() {
 
   const scrollOffset = useMotionValue(0);
 
-  // Clouds only for hero; mid-journey stays dark; soft return near CTA
   const cloudOpacity = useTransform(scrollOffset, [0, 0.08, 0.16, 0.88, 0.95], [1, 1, 0, 0, 1]);
-
   const cloudDarkOverlay = useTransform(scrollOffset, [0.08, 0.16, 0.78, 0.86], [0, 0.9, 0.9, 0]);
-
-  // Window frames — LOCKED feel: in before open, hold absorb, out before sketchbook
   const frameOpacity = useTransform(scrollOffset, [0.14, 0.20, 0.76, 0.84], [0, 1, 1, 0]);
-
-  // Short absorb after open, then cards with scrim — no long last-frame stall
   const windowScrim = useTransform(
     scrollOffset,
     [0.18, 0.22, 0.35, 0.355, 0.38, 0.72, 0.78],
     [0.72, 0.2, 0.2, 0.22, 0.55, 0.62, 0.72]
   );
 
-  // Real load progress for the bar
   const loadPct = Math.min(
     100,
     Math.round(
@@ -39,61 +39,85 @@ export default function App() {
   );
 
   useEffect(() => {
-    const t = window.setTimeout(() => setMinTimeDone(true), 1600);
+    const t = window.setTimeout(() => setMinTimeDone(true), cinematic ? 1600 : 600);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [cinematic]);
 
   useEffect(() => {
-    const assetsReady = (progress === 100 || !active) && framesReady;
+    // Static tier: no frame warm required
+    if (!cinematic) {
+      setFramesReady(true);
+      return;
+    }
+  }, [cinematic]);
+
+  useEffect(() => {
+    const assetsReady = cinematic
+      ? (progress === 100 || !active) && framesReady
+      : framesReady;
     if (minTimeDone && assetsReady) {
       const t = window.setTimeout(() => setIsLoading(false), 280);
       return () => window.clearTimeout(t);
     }
-  }, [minTimeDone, progress, active, framesReady]);
+  }, [minTimeDone, progress, active, framesReady, cinematic]);
 
-  // Safety: never block forever if frames fail
   useEffect(() => {
     const t = window.setTimeout(() => {
       setFramesReady(true);
       setMinTimeDone(true);
-    }, 12000);
+    }, cinematic ? 12000 : 4000);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [cinematic]);
 
   return (
-    <div className="w-full h-screen bg-black overflow-hidden relative font-sans">
+    <div className="w-full h-[100svh] bg-black overflow-hidden relative font-sans">
       <CustomCursor />
 
-      <div className="absolute inset-0 z-0 pointer-events-none w-full h-full">
-        <motion.div
-          style={{ opacity: cloudOpacity }}
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          initial={{ backgroundImage: 'url(/new_bg.png)' }}
-        >
-          <div className="absolute inset-0 bg-white/20" />
-          <div className="absolute bottom-0 left-0 w-full h-[35vh] bg-gradient-to-t from-white/95 via-white/50 to-transparent" />
-          <motion.div
-            style={{ opacity: cloudDarkOverlay }}
-            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black/95"
-          />
-        </motion.div>
+      {cinematic ? (
+        <>
+          <div className="absolute inset-0 z-0 pointer-events-none w-full h-full">
+            <motion.div
+              style={{ opacity: cloudOpacity }}
+              className="absolute inset-0 w-full h-full bg-cover bg-center"
+              initial={{ backgroundImage: 'url(/new_bg.png)' }}
+            >
+              <div className="absolute inset-0 bg-white/20" />
+              <div className="absolute bottom-0 left-0 w-full h-[35svh] bg-gradient-to-t from-white/95 via-white/50 to-transparent" />
+              <motion.div
+                style={{ opacity: cloudDarkOverlay }}
+                className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black/95"
+              />
+            </motion.div>
 
-        <motion.div
-          style={{ opacity: frameOpacity }}
-          className="absolute inset-0 w-full h-full"
-        >
-          <FrameSequence
-            scrollOffset={scrollOffset}
-            eagerWarm
-            onCriticalReady={() => setFramesReady(true)}
-          />
-          {/* Dynamic scrim: lighter during open so scenery can be absorbed */}
-          <motion.div
-            style={{ opacity: windowScrim }}
-            className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black"
-          />
-        </motion.div>
-      </div>
+            <motion.div
+              style={{ opacity: frameOpacity }}
+              className="absolute inset-0 w-full h-full"
+            >
+              <FrameSequence
+                scrollOffset={scrollOffset}
+                eagerWarm
+                tier={tier}
+                onCriticalReady={() => setFramesReady(true)}
+              />
+              <motion.div
+                style={{ opacity: windowScrim }}
+                className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black"
+              />
+            </motion.div>
+          </div>
+
+          <div className="absolute inset-0 w-full h-full z-10">
+            <JetScene isLoading={isLoading} scrollOffset={scrollOffset} tier={tier} />
+          </div>
+        </>
+      ) : (
+        <>
+          <StaticHero scrollOffset={scrollOffset} />
+          <StaticScrollHost isLoading={isLoading} scrollOffset={scrollOffset}>
+            <OverlayHTML isLoading={isLoading} scrollOffset={scrollOffset} />
+          </StaticScrollHost>
+        </>
+      )}
 
       <AnimatePresence>
         {isLoading && (
@@ -123,16 +147,24 @@ export default function App() {
                 />
               </div>
               <p className="mt-4 text-[10px] tracking-[0.2em] uppercase text-white/40">
-                {framesReady ? 'Preparing cabin' : 'Loading journey'}
+                {cinematic
+                  ? framesReady
+                    ? 'Preparing cabin'
+                    : 'Loading journey'
+                  : 'Preparing journey'}
               </p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="absolute inset-0 w-full h-full z-10">
-        <JetScene isLoading={isLoading} scrollOffset={scrollOffset} />
-      </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <DeviceTierProvider>
+      <LuxFlyApp />
+    </DeviceTierProvider>
   );
 }

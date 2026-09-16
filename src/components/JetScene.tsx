@@ -1,10 +1,11 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, ContactShadows, PerspectiveCamera, ScrollControls, Scroll, useScroll } from '@react-three/drei';
 import { JetModel } from './JetModel';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OverlayHTML } from './OverlayHTML';
 import type { MotionValue } from 'framer-motion';
+import { cappedDprForTier, type DeviceTier } from '../lib/deviceTier';
 
 /** Window frames dominate roughly here — hide costly 3D jet work */
 const FRAME_HIDE_START = 0.20;
@@ -14,16 +15,21 @@ function ScrollManager({
   children,
   scrollOffset,
   isLoading,
+  tier,
 }: {
   children: React.ReactNode;
   scrollOffset?: MotionValue<number>;
   isLoading: boolean;
+  tier: DeviceTier;
 }) {
   const scroll = useScroll();
+  const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const targetPosition = new THREE.Vector3();
   const targetRotation = new THREE.Euler();
   const visibleRef = useRef(true);
+  const underWindowRef = useRef(false);
+  const baseDpr = useMemo(() => cappedDprForTier(tier), [tier]);
 
   const prefersReducedMotion =
     typeof window !== 'undefined' &&
@@ -61,6 +67,10 @@ function ScrollManager({
 
     // Hide jet while window sequence is the hero visual (saves GPU)
     const underWindow = t >= FRAME_HIDE_START && t <= FRAME_HIDE_END;
+    if (underWindow !== underWindowRef.current) {
+      underWindowRef.current = underWindow;
+      gl.setPixelRatio(underWindow ? Math.min(0.75, baseDpr) : baseDpr);
+    }
     if (underWindow) {
       visibleRef.current = false;
       groupRef.current.visible = false;
@@ -171,24 +181,25 @@ function ScrollManager({
   return <group ref={groupRef} visible={false}>{children}</group>;
 }
 
-function AdaptiveEffects({ isMobile }: { isMobile: boolean }) {
+function AdaptiveEffects({ tier }: { tier: DeviceTier }) {
   const scroll = useScroll();
   const shadowsRef = useRef<THREE.Group>(null);
   const envGroupRef = useRef<THREE.Group>(null);
+  const isLite = tier === 'lite';
 
   useFrame(() => {
     const t = scroll.offset;
     const show = t < FRAME_HIDE_START || t > FRAME_HIDE_END;
-    if (shadowsRef.current) shadowsRef.current.visible = show && !isMobile;
+    if (shadowsRef.current) shadowsRef.current.visible = show && tier === 'full';
     if (envGroupRef.current) envGroupRef.current.visible = show;
   });
 
   return (
     <>
       <group ref={envGroupRef}>
-        <Environment preset="dawn" resolution={isMobile ? 128 : 256} />
+        <Environment preset="dawn" resolution={isLite ? 128 : 256} />
       </group>
-      {!isMobile && (
+      {tier === 'full' && (
         <group ref={shadowsRef}>
           <ContactShadows position={[0, -1.8, 0]} opacity={0.32} scale={15} blur={2} far={5} />
         </group>
@@ -209,21 +220,18 @@ function TabVisibility() {
   return null;
 }
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
-  );
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  return isMobile;
-}
-
-export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean; scrollOffset?: MotionValue<number> }) {
-  const isMobile = useIsMobile();
-  const dpr = useMemo<[number, number]>(() => [1, 1], []);
+export function JetScene({
+  isLoading,
+  scrollOffset,
+  tier = 'full',
+}: {
+  isLoading: boolean;
+  scrollOffset?: MotionValue<number>;
+  tier?: DeviceTier;
+}) {
+  const isLite = tier === 'lite';
+  const maxDpr = cappedDprForTier(tier);
+  const dpr = useMemo<[number, number]>(() => [1, maxDpr], [maxDpr]);
 
   return (
     <div className="w-full h-full z-30 pointer-events-auto">
@@ -231,29 +239,30 @@ export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean; scro
         shadows={false}
         dpr={dpr}
         gl={{
-          antialias: !isMobile,
+          // Lite: sharper pixels via DPR; AA off is cheaper on TBDR GPUs
+          antialias: tier === 'full',
           powerPreference: 'high-performance',
           alpha: true,
           stencil: false,
           depth: true,
         }}
-        performance={{ min: 0.5 }}
+        performance={{ min: 0.75 }}
       >
-        <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={isMobile ? 34 : 30} />
+        <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={isLite ? 34 : 30} />
         <TabVisibility />
 
-        <ambientLight intensity={isMobile ? 0.65 : 0.5} />
-        <spotLight position={[10, 15, 10]} angle={0.25} penumbra={1} intensity={isMobile ? 2.2 : 3} />
-        {!isMobile && (
+        <ambientLight intensity={isLite ? 0.7 : 0.5} />
+        <spotLight position={[10, 15, 10]} angle={0.25} penumbra={1} intensity={isLite ? 2.4 : 3} />
+        {tier === 'full' && (
           <spotLight position={[-10, 5, -10]} angle={0.25} penumbra={1} intensity={2} color="#ffffff" />
         )}
-        <pointLight position={[-4, -1, 0]} intensity={isMobile ? 2.5 : 4} color="#ff6600" distance={12} />
+        <pointLight position={[-4, -1, 0]} intensity={isLite ? 2.2 : 4} color="#ff6600" distance={12} />
 
         <Suspense fallback={null}>
-          <ScrollControls pages={9} damping={isMobile ? 0.05 : 0.035}>
+          <ScrollControls pages={9} damping={isLite ? 0.05 : 0.035}>
             <Scroll>
-              <ScrollManager scrollOffset={scrollOffset} isLoading={isLoading}>
-                <JetModel />
+              <ScrollManager scrollOffset={scrollOffset} isLoading={isLoading} tier={tier}>
+                <JetModel tier={tier} />
               </ScrollManager>
             </Scroll>
 
@@ -261,7 +270,7 @@ export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean; scro
               <OverlayHTML isLoading={isLoading} scrollOffset={scrollOffset} />
             </Scroll>
 
-            <AdaptiveEffects isMobile={isMobile} />
+            <AdaptiveEffects tier={tier} />
           </ScrollControls>
         </Suspense>
       </Canvas>

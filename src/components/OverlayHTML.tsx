@@ -208,7 +208,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                Curated <span className="font-medium">Destinations.</span>
             </h2>
             <p className="text-white/90 text-sm md:text-base leading-relaxed mb-10 max-w-lg mx-auto drop-shadow-sm">
-               From the towering skylines of Dubai to the sun-kissed coasts of the Maldives, we handpick destinations that match your travel style — whether it's adventure, relaxation, or cultural immersion.
+               From the towering skylines of Dubai to the sun-kissed coasts of the Maldives, we handpick destinations that match your travel style, whether it's adventure, relaxation, or cultural immersion.
             </p>
 <div className="flex flex-wrap justify-center gap-8 md:gap-12">
                 <div className="text-center">
@@ -335,7 +335,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             <span className="text-xs tracking-[0.2em] text-[#E8B86D] uppercase mb-4 block font-semibold">Our Story</span>
             <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-medium mb-6 tracking-tight leading-none">A Decade of Dream<br/>Journeys.</h2>
             <p className="text-white/80 text-sm leading-relaxed mb-6">
-               For over 10 years, LuxFly has been crafting unforgettable travel experiences. We don't just book trips — we create memories that last a lifetime. Our team of travel experts has personally visited every destination we recommend.
+               For over 10 years, LuxFly has been crafting unforgettable travel experiences. We don't just book trips, we create memories that last a lifetime. Our team of travel experts has personally visited every destination we recommend.
             </p>
             <MagneticButton
               type="button"
@@ -372,8 +372,8 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                {[
-                  { name: 'Sarah Mitchell', trip: 'Maldives, 2024', text: 'LuxFly planned the most incredible honeymoon. Every detail was perfect — from the overwater villa to the private dinner on the beach.' },
-                  { name: 'James Chen', trip: 'Japan, 2024', text: 'As a first-time traveler to Japan, I was nervous. LuxFly handled everything — visas, hotels, even restaurant reservations. Absolutely seamless.' },
+                  { name: 'Sarah Mitchell', trip: 'Maldives, 2024', text: 'LuxFly planned the most incredible honeymoon. Every detail was perfect, from the overwater villa to the private dinner on the beach.' },
+                  { name: 'James Chen', trip: 'Japan, 2024', text: 'As a first-time traveler to Japan, I was nervous. LuxFly handled everything, visas, hotels, even restaurant reservations. Absolutely seamless.' },
                   { name: 'Priya Sharma', trip: 'Iceland, 2023', text: 'The Northern Lights trip was a dream come true. LuxFly found us a hidden hot spring away from the crowds. Unforgettable experience.' },
                ].map((t, i) => (
                   <motion.div 
@@ -424,8 +424,8 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
           <span className="text-[10px] md:text-[11px] font-semibold tracking-[0.28em] text-[#A16207] uppercase">
             Destinations · Sketchbook
           </span>
-          <p className="mt-2 text-[13px] md:text-sm text-[#1C1917]/75 font-medium max-w-md leading-relaxed">
-            Flip through places we&apos;ve lived — then pick one to begin.
+          <p className="mt-2 text-[13px] md:text-sm text-white/80 font-medium max-w-md leading-relaxed">
+            Flip through places we&apos;ve lived, then pick one to begin.
           </p>
           <div className="mt-3 w-10 h-px bg-[#A16207]/55" aria-hidden="true" />
         </div>

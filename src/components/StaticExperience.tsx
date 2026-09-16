@@ -24,14 +24,14 @@ const destinations = [
 const steps = [
   { num: '01', title: 'Share Your Vision', desc: 'Tell us where you want to go and what you want to feel.' },
   { num: '02', title: 'We Craft Your Journey', desc: 'Experts design a personalized itinerary around you.' },
-  { num: '03', title: 'Travel with Confidence', desc: 'Flights, stays, and hidden gems — handled.' },
+  { num: '03', title: 'Travel with Confidence', desc: 'Flights, stays, and hidden gems, handled.' },
 ];
 
 const testimonials = [
   {
     name: 'Sarah Mitchell',
     trip: 'Maldives, 2024',
-    text: 'Every detail was perfect — from the overwater villa to the private dinner on the beach.',
+    text: 'Every detail was perfect, from the overwater villa to the private dinner on the beach.',
   },
   {
     name: 'James Chen',
@@ -250,7 +250,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
             Travel the world without the stress.
           </h2>
           <p className="mt-6 text-[#57534E] text-base leading-relaxed">
-            Personal itineraries, trusted partners, and concierge support from inquiry to homecoming —
+            Personal itineraries, trusted partners, and concierge support from inquiry to homecoming,
             so every journey feels effortless.
           </p>
         </motion.div>
@@ -343,7 +343,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
             Arrive before you land.
           </h2>
           <p className="mt-4 text-white/80 text-sm sm:text-base leading-relaxed">
-            Quiet luxury in the air — the same standard we hold for every hotel, transfer, and evening we arrange on the ground.
+            Quiet luxury in the air, the same standard we hold for every hotel, transfer, and evening we arrange on the ground.
           </p>
         </motion.div>
       </section>
@@ -388,7 +388,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
             A decade of dream journeys.
           </h2>
           <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-8">
-            For over 10 years, LuxFly has crafted travel that feels personal. We don&apos;t just book trips —
+            For over 10 years, LuxFly has crafted travel that feels personal. We don&apos;t just book trips,
             we design days our experts have lived themselves.
           </p>
           <div className="grid grid-cols-2 gap-4 max-w-md mx-auto text-left">
@@ -474,7 +474,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
             <>
               <h2 className="text-3xl sm:text-4xl font-medium mb-3 tracking-tight">Start planning</h2>
               <p className="text-white/70 text-sm mb-8 leading-relaxed">
-                Tell us your dream destination — we&apos;ll craft the itinerary.
+                Tell us your dream destination, we&apos;ll craft the itinerary.
               </p>
               <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
                 <div className="minimal-input-container">

@@ -1,4 +1,4 @@
-import { motion, useMotionValueEvent } from 'framer-motion';
+import { motion, useMotionValue, useMotionValueEvent, useTransform } from 'framer-motion';
 import { Menu, X, MapPin, Calendar, Users, Compass, Star, ChevronRight, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,9 +10,19 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
   const [progressPct, setProgressPct] = useState("0%");
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({ destination: '', style: '', travelers: '2' });
+  const [sketchbookReady, setSketchbookReady] = useState(false);
+  const fallbackOffset = useMotionValue(0);
+  const offset = scrollOffset ?? fallbackOffset;
 
-  useMotionValueEvent(scrollOffset ?? { on: () => ({}) } as any, "change", (v: number) => {
+  // Early card (Destinations): visible before window, clears during open
+  const earlyCardOpacity = useTransform(offset, [0.08, 0.12, 0.18, 0.215], [0, 1, 1, 0]);
+
+  // Mid cards right after open ends (0.35) — short breathe, no long freeze
+  const postOpenCardsOpacity = useTransform(offset, [0.20, 0.22, 0.355, 0.38], [0, 0, 0, 1]);
+
+  useMotionValueEvent(offset, "change", (v: number) => {
     setProgressPct(`${Math.round(v * 100)}%`);
+    if (v >= 0.55) setSketchbookReady(true);
   });
 
   useEffect(() => {
@@ -92,9 +102,9 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       {/* ═══════ SECTION 1: HERO ═══════ */}
       <section id="hero" className="h-screen w-full relative flex flex-col items-center justify-start pt-[5vh] md:pt-[8vh]">
         <motion.header 
-          initial={{ y: -50, opacity: 0 }}
+          initial={{ y: -36, opacity: 0 }}
           animate={!isLoading ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-0 w-full px-6 md:px-12 py-6 md:py-8 flex justify-between items-center z-50"
         >
             <div className="flex items-center gap-3 font-bold text-xl md:text-2xl tracking-tight text-[#1C1917] bg-[#FAFAF9] px-3.5 py-2 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] border border-[#1C1917]/18">
@@ -125,23 +135,10 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
            </div>
         </motion.header>
 
-        {/* Subtle atmospheric watermark — kept very faint so it never fights the CTA */}
         <motion.div 
-          initial={{ opacity: 0, y: 50, scale: 0.95 }}
-          animate={!isLoading ? { opacity: 0.04, y: 0, scale: 1 } : {}}
-          transition={{ duration: 1.5, delay: 0.2 }}
-          className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-full flex justify-center pointer-events-none"
-          aria-hidden="true"
-        >
-          <span className="text-[clamp(4rem,18vw,22vw)] font-bold text-[#1C1917] whitespace-nowrap tracking-tighter">
-            EXPLORE THE WORLD
-          </span>
-        </motion.div>
-
-        <motion.div 
-          initial={{ y: 30, opacity: 0 }}
+          initial={{ y: 28, opacity: 0 }}
           animate={!isLoading ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
+          transition={{ duration: 1.05, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-30 flex flex-col items-center justify-start w-full pointer-events-none"
         >
             <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#A16207] uppercase mb-4 md:mb-6">
@@ -153,9 +150,9 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
         </motion.div>
 
         <motion.div 
-          initial={{ y: 30, opacity: 0 }}
+          initial={{ y: 24, opacity: 0 }}
           animate={!isLoading ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 1.2, delay: 1.0, ease: "easeOut" }}
+          transition={{ duration: 1.0, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-50 flex flex-col items-center w-full mt-2 md:mt-4 pointer-events-none"
         >
             <p className="text-[#292524] max-w-sm md:max-w-md text-center text-sm md:text-base font-medium leading-relaxed px-4">
@@ -167,13 +164,10 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
         </motion.div>
       </section>
 
-      {/* ═══════ SECTION 2: CURATED DESTINATIONS ═══════ */}
+      {/* ═══════ SECTION 2: CURATED DESTINATIONS (early card — clears during window open) ═══════ */}
       <section id="destinations" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
+            style={{ opacity: earlyCardOpacity }}
             className="text-center max-w-2xl z-50 rounded-[2rem] bg-black/40 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
          >
             <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#A16207] uppercase mb-4 block">
@@ -202,16 +196,13 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
          </motion.div>
       </section>
 
-      {/* ═══════ SECTION 3: TRAVEL THE WORLD ═══════ */}
+      {/* ═══════ SECTION 3: TRAVEL — returns after window fully open ═══════ */}
       <section id="travel" className="h-screen w-full relative flex flex-col items-center justify-center">
-         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center z-50">
-            <motion.div
-               initial={{ opacity: 0, y: 30 }}
-               whileInView={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.8 }}
-               viewport={{ once: true, margin: "-10%" }}
-               className="rounded-[2rem] bg-black/45 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
-            >
+         <motion.div
+            style={{ opacity: postOpenCardsOpacity }}
+            className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center z-50"
+         >
+            <div className="rounded-[2rem] bg-black/45 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 
                className="text-[clamp(2.2rem,5vw,3.5rem)] font-medium leading-[1.1] text-white"
             >
@@ -227,17 +218,14 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                   Explore Destinations
                </MagneticButton>
             </div>
-            </motion.div>
-         </div>
+            </div>
+         </motion.div>
       </section>
 
       {/* ═══════ SECTION 4: HOW IT WORKS ═══════ */}
       <section id="how-it-works" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-16">
          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
+            style={{ opacity: postOpenCardsOpacity }}
             className="max-w-4xl w-full z-50 rounded-[2rem] bg-black/45 backdrop-blur-md border border-white/15 px-6 py-10 md:px-10 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
          >
             <div className="text-center mb-12">
@@ -274,10 +262,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       {/* ═══════ SECTION 5: SEAMLESS EXPERIENCE ═══════ */}
       <section id="experience" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
+            style={{ opacity: postOpenCardsOpacity }}
             className="glass-glow bg-black/55 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] text-white max-w-xl z-50 w-full border border-white/15"
          >
             <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-light mb-4 tracking-tight leading-none">Seamless<br/><span className="font-medium">Experience.</span></h2>
@@ -308,10 +293,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       {/* ═══════ SECTION 6: OUR STORY ═══════ */}
       <section id="story" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
+            style={{ opacity: postOpenCardsOpacity }}
             className="glass-glow bg-black/55 backdrop-blur-2xl p-8 md:p-10 rounded-[2rem] text-white max-w-xl z-50 text-center border border-white/15"
          >
             <span className="text-xs tracking-[0.2em] text-[#E8B86D] uppercase mb-4 block font-semibold">Our Story</span>
@@ -328,10 +310,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       {/* ═══════ SECTION 7: SOCIAL PROOF ═══════ */}
       <section id="social-proof" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-16">
          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
+            style={{ opacity: postOpenCardsOpacity }}
             className="max-w-5xl w-full z-50"
          >
             <div className="text-center mb-10">
@@ -393,14 +372,18 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
           viewport={{ once: true, margin: "-10%" }}
           className="w-full h-full pointer-events-auto relative z-[2] pt-2"
         >
-          <iframe 
-            src="/sketchbook/index.html" 
-            title="LuxFly Destinations Sketchbook"
-            className="w-full h-full border-0 outline-none block"
-            style={{ background: 'transparent', colorScheme: 'light' }}
-            sandbox="allow-scripts"
-            loading="lazy"
-          />
+          {sketchbookReady ? (
+            <iframe 
+              src="/sketchbook/index.html" 
+              title="LuxFly Destinations Sketchbook"
+              className="w-full h-full border-0 outline-none block"
+              style={{ background: 'transparent', colorScheme: 'light' }}
+              sandbox="allow-scripts"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full" aria-hidden="true" />
+          )}
         </motion.div>
       </section>
 

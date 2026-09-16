@@ -323,14 +323,19 @@ img{-webkit-user-drag:none;user-drag:none}
 .sb-wrap.intro .sb-caption{animation:none}
 .sb-wrap.intro .sb-caption.cap-out{display:none}
 @media (max-width:640px){
-  .sb-wrap{width:100%;padding:8px 4px 14px;gap:10px}
-  .sb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:70;padding:12px 6px}
-  .sb-arrow.left{left:2px}
-  .sb-arrow.right{right:2px}
-  .sb-3d{width:calc(100% - 8px);max-width:none;max-height:min(52vh, calc(100% - 8px))}
-  .sb-caption{font-size:18px}
+  .sb-wrap{width:100%;padding:12px 4px 16px;gap:10px}
+  .sb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:70;padding:12px 8px;min-width:44px;min-height:44px}
+  .sb-arrow.left{left:0}
+  .sb-arrow.right{right:0}
+  .sb-3d{width:calc(100% - 4px);max-width:none;max-height:min(48vh, calc(100% - 12px))}
+  .sb-caption{font-size:16px}
   .sb-hint{font-size:9.5px;letter-spacing:.1em;padding:0 16px;text-align:center}
-  .sb-cta{padding:10px 18px;font-size:11px}
+  .sb-cta{padding:12px 20px;font-size:11px;min-height:44px}
+  .sb-tools{transform:scale(0.95)}
+}
+@media (min-width:641px) and (max-width:1024px){
+  .sb-3d{max-width:min(920px, calc((100vh - 210px) * 1376 / 768))}
+  .sb-wrap{padding:20px 16px 24px}
 }
 </style>
 </head>

@@ -40,37 +40,65 @@ export function JetModel() {
     }
   });
 
-  const sparkleCount = isMobile ? 15 : 40;
+  const sparkleCount = isMobile ? 8 : 28;
 
-  const materials = useMemo(() => ({
-    body: new THREE.MeshPhysicalMaterial({
-      color: '#08080a',
-      metalness: 0.6,
-      roughness: 0.25,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
-      envMapIntensity: 2.5,
-      side: THREE.DoubleSide,
-    }),
-    glass: new THREE.MeshPhysicalMaterial({
-      color: '#000000',
-      metalness: 1.0,
-      roughness: 0.0,
-      clearcoat: 1.0,
-      envMapIntensity: 4.0,
-    }),
-    // Use MeshStandardMaterial for non-hero parts (performance)
-    chrome: new THREE.MeshStandardMaterial({
-      color: '#aaaaaa',
-      metalness: 1.0,
-      roughness: 0.1,
-    }),
-    glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
-    glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-    navRed:      new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
-    navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
-    strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
-  }), []);
+  const materials = useMemo(() => {
+    if (isMobile) {
+      return {
+        body: new THREE.MeshStandardMaterial({
+          color: '#08080a',
+          metalness: 0.55,
+          roughness: 0.3,
+          envMapIntensity: 1.6,
+          side: THREE.DoubleSide,
+        }),
+        glass: new THREE.MeshStandardMaterial({
+          color: '#000000',
+          metalness: 0.9,
+          roughness: 0.05,
+          envMapIntensity: 2.2,
+        }),
+        chrome: new THREE.MeshStandardMaterial({
+          color: '#aaaaaa',
+          metalness: 1.0,
+          roughness: 0.15,
+        }),
+        glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
+        glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+        navRed:      new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
+        navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
+        strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+      };
+    }
+    return {
+      body: new THREE.MeshPhysicalMaterial({
+        color: '#08080a',
+        metalness: 0.6,
+        roughness: 0.25,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+        envMapIntensity: 2.5,
+        side: THREE.DoubleSide,
+      }),
+      glass: new THREE.MeshPhysicalMaterial({
+        color: '#000000',
+        metalness: 1.0,
+        roughness: 0.0,
+        clearcoat: 1.0,
+        envMapIntensity: 4.0,
+      }),
+      chrome: new THREE.MeshStandardMaterial({
+        color: '#aaaaaa',
+        metalness: 1.0,
+        roughness: 0.1,
+      }),
+      glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
+      glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+      navRed:      new THREE.MeshBasicMaterial({ color: '#ff0000', toneMapped: false }),
+      navGreen:    new THREE.MeshBasicMaterial({ color: '#00ff00', toneMapped: false }),
+      strobeWhite: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+    };
+  }, [isMobile]);
 
   // ─── MAIN WING PLANFORM (ExtrudeGeometry) ───────────────────────────────────
   // Shape is drawn in the local XY plane:

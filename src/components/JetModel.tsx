@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,6 +8,11 @@ export function JetModel() {
   const beaconLightRef = useRef<THREE.PointLight>(null);
   const strobeLightRef = useRef<THREE.PointLight>(null);
   const beaconMeshRef = useRef<THREE.Mesh>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
   
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -22,6 +27,8 @@ export function JetModel() {
     }
   });
 
+  const sparkleCount = isMobile ? 15 : 40;
+
   const materials = useMemo(() => ({
     body: new THREE.MeshPhysicalMaterial({
       color: '#08080a',
@@ -30,7 +37,6 @@ export function JetModel() {
       clearcoat: 1.0,
       clearcoatRoughness: 0.05,
       envMapIntensity: 2.5,
-      // DoubleSide so mirrored geometry (scale -1) renders correctly
       side: THREE.DoubleSide,
     }),
     glass: new THREE.MeshPhysicalMaterial({
@@ -40,11 +46,11 @@ export function JetModel() {
       clearcoat: 1.0,
       envMapIntensity: 4.0,
     }),
-    chrome: new THREE.MeshPhysicalMaterial({
+    // Use MeshStandardMaterial for non-hero parts (performance)
+    chrome: new THREE.MeshStandardMaterial({
       color: '#aaaaaa',
       metalness: 1.0,
       roughness: 0.1,
-      clearcoat: 1.0,
     }),
     glow:        new THREE.MeshBasicMaterial({ color: '#ff5500', toneMapped: false }),
     glowCore:    new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
@@ -102,7 +108,7 @@ export function JetModel() {
   }, []);
 
   return (
-      <group ref={jetRef} position={[0, -0.3, 0]} scale={0.85} rotation={[0.1, -0.8, -0.05]}>
+      <group ref={jetRef} position={[0, -0.3, 0]} scale={isMobile ? 0.6 : 0.85} rotation={[0.1, -0.8, -0.05]}>
 
         {/* ══════════════════ FUSELAGE ══════════════════ */}
         <mesh material={materials.body} scale={[4.8, 0.52, 0.52]} castShadow receiveShadow>
@@ -308,26 +314,26 @@ export function JetModel() {
             <mesh material={materials.chrome} position={[-1.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
               <torusGeometry args={[0.24, 0.025, 32, 64]} />
             </mesh>
-            {/* Engine core glow + sparkles */}
-            <group position={[-1.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-              <mesh material={materials.glow}>
-                <ringGeometry args={[0.15, 0.23, 32]} />
-              </mesh>
-              <mesh material={materials.glowCore} position={[0, 0, 0.01]}>
-                <circleGeometry args={[0.15, 32]} />
-              </mesh>
-              <pointLight distance={6} intensity={1.5} color="#ff5500" position={[0, 0, 0.5]} />
-              <Sparkles
-                count={40}
-                scale={[0.6, 0.6, 2.5]}
-                size={3}
-                speed={0.8}
-                opacity={0.6}
-                color="#ffaa00"
-                position={[0, 0, 1.2]}
-                noise={1}
-              />
-            </group>
+{/* Engine core glow + sparkles */}
+              <group position={[-1.15, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+                <mesh material={materials.glow}>
+                  <ringGeometry args={[0.15, 0.23, 32]} />
+                </mesh>
+                <mesh material={materials.glowCore} position={[0, 0, 0.01]}>
+                  <circleGeometry args={[0.15, 32]} />
+                </mesh>
+                <pointLight distance={6} intensity={1.5} color="#ff5500" position={[0, 0, 0.5]} />
+                <Sparkles
+                  count={sparkleCount}
+                  scale={[0.6, 0.6, 2.5]}
+                  size={3}
+                  speed={0.8}
+                  opacity={0.6}
+                  color="#ffaa00"
+                  position={[0, 0, 1.2]}
+                  noise={1}
+                />
+              </group>
           </group>
         ))}
 

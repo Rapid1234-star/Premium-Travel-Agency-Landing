@@ -17,10 +17,17 @@ export function CustomCursor() {
   useEffect(() => {
     setIsTouchDevice(!window.matchMedia('(pointer: fine)').matches);
     
+    let ticking = false;
     const moveCursor = (e: MouseEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          cursorX.set(e.clientX);
+          cursorY.set(e.clientY);
+          if (!isVisible) setIsVisible(true);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     const handleMouseLeave = () => setIsVisible(false);

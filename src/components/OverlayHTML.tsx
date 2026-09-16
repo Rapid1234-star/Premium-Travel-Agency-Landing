@@ -1,9 +1,8 @@
 import { motion, useMotionValueEvent } from 'framer-motion';
 import { Menu, X, MapPin, Calendar, Users, Compass, Star, ChevronRight, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MagneticButton } from './MagneticButton';
-import { SketchbookSection } from './SketchbookSection';
 import type { MotionValue } from 'framer-motion';
 
 export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, scrollOffset?: MotionValue<number> }) {
@@ -16,10 +15,32 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
     setProgressPct(`${Math.round(v * 100)}%`);
   });
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.destination) {
+        handleDestinationSelect(event.data.destination);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const scrollToSection = (id: string) => {
     setMenuOpen(false);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleDestinationSelect = (destination: string) => {
+    setFormData(prev => ({ ...prev, destination }));
+    setFormSubmitted(false);
+    const ctaEl = document.getElementById('cta');
+    if (ctaEl) ctaEl.scrollIntoView({ behavior: 'smooth' });
+    // Focus the destination input after scroll
+    setTimeout(() => {
+      const input = document.getElementById('destination') as HTMLInputElement;
+      if (input) input.focus();
+    }, 800);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,7 +107,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
               <button 
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open Menu"
-                className="flex md:hidden items-center text-white mix-blend-difference hover:opacity-70 transition-opacity pointer-events-auto p-3 min-h-[44px] min-w-[44px]"
+                className="flex lg:hidden items-center text-white mix-blend-difference hover:opacity-70 transition-opacity pointer-events-auto p-3 min-h-[44px] min-w-[44px]"
               >
                  <Menu size={28} strokeWidth={1.5} />
               </button>
@@ -159,20 +180,20 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-10 max-w-lg mx-auto">
                From the towering skylines of Dubai to the sun-kissed coasts of the Maldives, we handpick destinations that match your travel style — whether it's adventure, relaxation, or cultural immersion.
             </p>
-            <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-               <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-white">200+</div>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-widest block mt-1">Destinations</span>
-               </div>
-               <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-white">10,000+</div>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-widest block mt-1">Trips Planned</span>
-               </div>
-               <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-white">98%</div>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-widest block mt-1">Satisfaction</span>
-               </div>
-            </div>
+<div className="flex flex-wrap justify-center gap-8 md:gap-12">
+                <div className="text-center">
+                   <div className="text-3xl md:text-4xl font-bold text-white">200+</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-widest block mt-1">Destinations</span>
+                </div>
+                <div className="text-center">
+                   <div className="text-3xl md:text-4xl font-bold text-white">10,000+</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-widest block mt-1">Trips Planned</span>
+                </div>
+                <div className="text-center">
+                   <div className="text-3xl md:text-4xl font-bold text-white">98%</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-widest block mt-1">Satisfaction</span>
+                </div>
+             </div>
          </motion.div>
       </section>
 
@@ -263,24 +284,24 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             <p className="text-gray-300 text-sm leading-relaxed mb-6">
                From the moment you inquire to the moment you return home, every detail is handled. Personal itineraries, 24/7 concierge support, and exclusive access to hidden gems.
             </p>
-            <div className="grid grid-cols-2 gap-4">
-               <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                  <div className="text-2xl font-bold">10+</div>
-                  <span className="text-[10px] text-gray-300 uppercase tracking-wider block">Years Experience</span>
-               </div>
-               <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                  <div className="text-2xl font-bold">500+</div>
-                  <span className="text-[10px] text-gray-300 uppercase tracking-wider block">Partner Hotels</span>
-               </div>
-               <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                  <div className="text-2xl font-bold">100%</div>
-                  <span className="text-[10px] text-gray-300 uppercase tracking-wider block">Personalized</span>
-               </div>
-               <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                  <div className="text-2xl font-bold">24/7</div>
-                  <span className="text-[10px] text-gray-300 uppercase tracking-wider block">Concierge Support</span>
-               </div>
-            </div>
+<div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                   <div className="text-2xl font-bold">10+</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-wider block">Years Experience</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                   <div className="text-2xl font-bold">500+</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-wider block">Partner Hotels</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                   <div className="text-2xl font-bold">100%</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-wider block">Personalized</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                   <div className="text-2xl font-bold">24/7</div>
+                   <span className="text-[10px] text-white/60 uppercase tracking-wider block">Concierge Support</span>
+                </div>
+             </div>
          </motion.div>
       </section>
 
@@ -355,7 +376,23 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       </section>
 
       {/* ═══════ SECTION 8: DESTINATIONS SKETCHBOOK ═══════ */}
-      <SketchbookSection />
+      <section id="sketchbook" className="h-screen w-full relative flex flex-col items-center justify-center pointer-events-none px-0">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+          viewport={{ once: true, margin: "-10%" }}
+          className="w-full h-full pointer-events-auto"
+        >
+          <iframe 
+            src="/sketchbook/index.html" 
+            title="LuxFly Destinations Sketchbook"
+            className="w-full h-full border-none outline-none bg-transparent"
+            sandbox="allow-scripts"
+            loading="lazy"
+          />
+        </motion.div>
+      </section>
 
       {/* ═══════ SECTION 9: CTA / BOOKING FORM ═══════ */}
       <section id="cta" className="h-screen w-full relative flex flex-col items-center justify-center px-4">

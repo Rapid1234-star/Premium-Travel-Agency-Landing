@@ -12,12 +12,26 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
   const targetPosition = new THREE.Vector3();
   const targetRotation = new THREE.Euler();
 
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' && 
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Smoothstep function for buttery transitions
+  const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
   useFrame((state, delta) => {
     if (scrollOffset) {
-       scrollOffset.set(scroll.offset);
+      scrollOffset.set(scroll.offset);
     }
 
     if (!groupRef.current) return;
+
+    // If reduced motion is preferred, keep plane static at hero position
+    if (prefersReducedMotion) {
+      groupRef.current.position.set(0, 1, -4);
+      groupRef.current.rotation.set(Math.PI / 4, 0, 0);
+      return;
+    }
 
     // Exponential decay lerp — truly frame-rate independent
     const lerpFactor = 1 - Math.pow(0.001, delta);
@@ -25,14 +39,15 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
     // Smooth phase weights (0-1) mapped to 8 transition intervals for 9 pages
     // Each page represents ~0.111 of the total scroll (1/8)
     const t = scroll.offset;
-    const w1 = Math.min(1, Math.max(0, t / 0.111));                    // Hero
-    const w2 = Math.min(1, Math.max(0, (t - 0.111) / 0.111));         // Destinations
-    const w3 = Math.min(1, Math.max(0, (t - 0.222) / 0.111));         // Travel
-    const w4 = Math.min(1, Math.max(0, (t - 0.333) / 0.111));         // How It Works
-    const w5 = Math.min(1, Math.max(0, (t - 0.444) / 0.111));         // Experience
-    const w6 = Math.min(1, Math.max(0, (t - 0.555) / 0.111));         // Story
-    const w7 = Math.min(1, Math.max(0, (t - 0.666) / 0.111));         // Social Proof
-    const w8 = Math.min(1, Math.max(0, (t - 0.777) / 0.111));         // Sketchbook
+    const pageWidth = 1 / 8;
+    const w1 = smoothstep(Math.min(1, Math.max(0, t / pageWidth)));                    // Hero
+    const w2 = smoothstep(Math.min(1, Math.max(0, (t - pageWidth) / pageWidth)));         // Destinations
+    const w3 = smoothstep(Math.min(1, Math.max(0, (t - 2 * pageWidth) / pageWidth)));         // Travel
+    const w4 = smoothstep(Math.min(1, Math.max(0, (t - 3 * pageWidth) / pageWidth)));         // How It Works
+    const w5 = smoothstep(Math.min(1, Math.max(0, (t - 4 * pageWidth) / pageWidth)));         // Experience
+    const w6 = smoothstep(Math.min(1, Math.max(0, (t - 5 * pageWidth) / pageWidth)));         // Story
+    const w7 = smoothstep(Math.min(1, Math.max(0, (t - 6 * pageWidth) / pageWidth)));         // Social Proof
+    const w8 = smoothstep(Math.min(1, Math.max(0, (t - 7 * pageWidth) / pageWidth)));         // Sketchbook
 
     // Phase targets — plane flies through the sky as user scrolls
     const p1 = { x: 0, y: -2.5 + w1 * 3.5, z: -4 + w1 * 10, rx: w1 * (Math.PI / 4), ry: 0, rz: 0 };
@@ -79,24 +94,24 @@ export function JetScene({ isLoading, scrollOffset }: { isLoading: boolean, scro
         <spotLight position={[-10, 5, -10]} angle={0.25} penumbra={1} intensity={2} color="#ffffff" />
         <pointLight position={[-4, -1, 0]} intensity={4} color="#ff6600" distance={12} />
 
-        <Suspense fallback={null}>
-          <ScrollControls pages={9} damping={0.18}>
-            
-            <Scroll>
-               <ScrollManager scrollOffset={scrollOffset}>
-                 <JetModel />
-               </ScrollManager>
-            </Scroll>
-            
-            <Scroll html style={{ width: '100vw' }}>
-               <OverlayHTML isLoading={isLoading} scrollOffset={scrollOffset} />
-            </Scroll>
-            
-          </ScrollControls>
-          <Environment preset="dawn" />
-        </Suspense>
+<Suspense fallback={null}>
+           <ScrollControls pages={9} damping={0.18}>
+             
+             <Scroll>
+                <ScrollManager scrollOffset={scrollOffset}>
+                  <JetModel />
+                </ScrollManager>
+             </Scroll>
+             
+             <Scroll html style={{ width: '100vw' }}>
+                <OverlayHTML isLoading={isLoading} scrollOffset={scrollOffset} />
+             </Scroll>
+             
+           </ScrollControls>
+           <Environment preset="dawn" />
+         </Suspense>
 
-        <ContactShadows position={[0, -2.2, 0]} opacity={0.6} scale={15} blur={3} far={5} />
+         <ContactShadows position={[0, -1.8, 0]} opacity={0.4} scale={15} blur={3} far={5} />
       </Canvas>
     </div>
   );

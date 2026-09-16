@@ -6,7 +6,7 @@
 
 A cinematic, scroll-driven landing page for a luxury travel agency, featuring a real-time 3D jet model, frame-sequence animations, and an interactive hand-drawn destination sketchbook.
 
-![LuxFly Hero](public/posters/jet-hero.jpg)
+![LuxFly Hero](fix4-plane-t1700.png)
 
 </div>
 

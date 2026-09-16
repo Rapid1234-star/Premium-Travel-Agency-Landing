@@ -1,12 +1,17 @@
 import { motion, useMotionValue, useMotionValueEvent, useTransform } from 'framer-motion';
-import { Menu, X, MapPin, Calendar, Users, Compass, Star, ChevronRight, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useScroll } from '@react-three/drei';
+import { Menu, X, Star, Check } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { MagneticButton } from './MagneticButton';
 import type { MotionValue } from 'framer-motion';
+import { useAccessibleMenu } from '../hooks/useAccessibleMenu';
+import { scrollDreiToId } from '../lib/scrollToSection';
 
 export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, scrollOffset?: MotionValue<number> }) {
+  const scroll = useScroll();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { menuRef, openMenu, closeMenu } = useAccessibleMenu(menuOpen, setMenuOpen);
   const [progressPct, setProgressPct] = useState("0%");
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({ destination: '', style: '', travelers: '2' });
@@ -25,6 +30,26 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
     if (v >= 0.55) setSketchbookReady(true);
   });
 
+  const scrollToSection = useCallback((id: string) => {
+    closeMenu();
+    // Defer so menu close doesn't steal layout
+    requestAnimationFrame(() => {
+      scrollDreiToId(id, scroll.el);
+    });
+  }, [closeMenu, scroll]);
+
+  const handleDestinationSelect = useCallback((destination: string) => {
+    setFormData(prev => ({ ...prev, destination }));
+    setFormSubmitted(false);
+    requestAnimationFrame(() => {
+      scrollDreiToId('cta', scroll.el);
+    });
+    window.setTimeout(() => {
+      const input = document.getElementById('destination') as HTMLInputElement | null;
+      input?.focus();
+    }, 700);
+  }, [scroll]);
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.destination) {
@@ -33,25 +58,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  const scrollToSection = (id: string) => {
-    setMenuOpen(false);
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleDestinationSelect = (destination: string) => {
-    setFormData(prev => ({ ...prev, destination }));
-    setFormSubmitted(false);
-    const ctaEl = document.getElementById('cta');
-    if (ctaEl) ctaEl.scrollIntoView({ behavior: 'smooth' });
-    // Focus the destination input after scroll
-    setTimeout(() => {
-      const input = document.getElementById('destination') as HTMLInputElement;
-      if (input) input.focus();
-    }, 800);
-  };
+  }, [handleDestinationSelect]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,12 +69,14 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
     <div className="w-screen relative font-sans text-black" style={{ height: '900svh' }}>
       
       {/* Scroll Progress Indicator */}
-      <div className="fixed right-2 top-[20svh] bottom-[20svh] w-[1px] md:w-[2px] bg-white/10 z-50 rounded-full">
+      <div className="fixed right-2 top-[20svh] bottom-[20svh] w-[1px] md:w-[2px] bg-white/10 z-50 rounded-full" aria-hidden="true">
         <div 
           className="w-full bg-[#A16207] rounded-full origin-top"
           style={{ height: progressPct }}
           role="progressbar"
           aria-valuenow={Math.round(parseFloat(progressPct))}
+          aria-valuemin={0}
+          aria-valuemax={100}
           aria-label="Scroll progress"
         />
       </div>
@@ -75,26 +84,32 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       {/* Mobile Menu Overlay */}
       {createPortal(
         <motion.div 
+          ref={menuRef}
+          id="luxfly-site-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site menu"
           className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center pointer-events-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: menuOpen ? 1 : 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
           style={{ pointerEvents: menuOpen ? 'auto' : 'none' }}
+          aria-hidden={!menuOpen}
         >
           <button 
-            onClick={() => setMenuOpen(false)} 
-            className="absolute top-8 right-6 text-white p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            onClick={closeMenu} 
+            className="absolute top-[max(2rem,env(safe-area-inset-top))] right-6 text-white p-3 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
             aria-label="Close menu"
           >
             <X size={28} />
           </button>
-          <div className="flex flex-col items-center gap-8 text-white text-2xl font-medium">
-            <button onClick={() => scrollToSection('hero')} className="hover:text-[#A16207] transition-colors">Home</button>
-            <button onClick={() => scrollToSection('destinations')} className="hover:text-[#A16207] transition-colors">Destinations</button>
-            <button onClick={() => scrollToSection('how-it-works')} className="hover:text-[#A16207] transition-colors">How It Works</button>
-            <button onClick={() => scrollToSection('story')} className="hover:text-[#A16207] transition-colors">Our Story</button>
-            <button onClick={() => scrollToSection('cta')} className="hover:text-[#A16207] transition-colors">Plan a Trip</button>
-          </div>
+          <nav className="flex flex-col items-center gap-8 text-white text-2xl font-medium">
+            <button type="button" onClick={() => scrollToSection('hero')} className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer">Home</button>
+            <button type="button" onClick={() => scrollToSection('destinations')} className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer">Destinations</button>
+            <button type="button" onClick={() => scrollToSection('how-it-works')} className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer">How It Works</button>
+            <button type="button" onClick={() => scrollToSection('story')} className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer">Our Story</button>
+            <button type="button" onClick={() => scrollToSection('cta')} className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer">Plan a Trip</button>
+          </nav>
         </motion.div>,
         document.body
       )}
@@ -105,7 +120,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
           initial={{ y: -36, opacity: 0 }}
           animate={!isLoading ? { y: 0, opacity: 1 } : {}}
           transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute top-0 w-full px-6 md:px-12 py-6 md:py-8 flex justify-between items-center z-50"
+          className="absolute top-0 w-full px-6 md:px-12 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6 md:pb-8 flex justify-between items-center z-50"
         >
             <div className="flex items-center gap-3 font-bold text-xl md:text-2xl tracking-tight text-[#1C1917] bg-[#FAFAF9] px-3.5 py-2 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] border border-[#1C1917]/18">
                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -115,21 +130,32 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             </div>
            <div className="flex items-center gap-3 md:gap-5">
               <button 
-                onClick={() => setMenuOpen(true)}
+                type="button"
+                onClick={(e) => openMenu(e.currentTarget)}
                 aria-label="Open Menu"
-                className="flex lg:hidden items-center text-[#1C1917] bg-[#FAFAF9] border border-[#1C1917]/18 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] hover:bg-white transition-colors pointer-events-auto p-3 min-h-[44px] min-w-[44px] cursor-pointer"
+                aria-expanded={menuOpen}
+                aria-controls="luxfly-site-menu"
+                className="flex lg:hidden items-center text-[#1C1917] bg-[#FAFAF9] border border-[#1C1917]/18 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] hover:bg-white transition-colors duration-200 pointer-events-auto p-3 min-h-[44px] min-w-[44px] cursor-pointer"
               >
                  <Menu size={24} strokeWidth={2} />
               </button>
               <button
-                onClick={() => setMenuOpen(true)}
-                className="hidden lg:flex items-center gap-2.5 text-sm font-semibold tracking-wide text-[#1C1917] bg-[#FAFAF9] border border-[#1C1917]/18 px-4 py-2.5 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] hover:bg-white transition-colors pointer-events-auto cursor-pointer min-h-[44px]"
+                type="button"
+                onClick={(e) => openMenu(e.currentTarget)}
+                className="hidden lg:flex items-center gap-2.5 text-sm font-semibold tracking-wide text-[#1C1917] bg-[#FAFAF9] border border-[#1C1917]/18 px-4 py-2.5 rounded-full shadow-[0_4px_16px_rgba(28,25,23,0.18)] hover:bg-white transition-colors duration-200 pointer-events-auto cursor-pointer min-h-[44px]"
                 aria-label="Open menu"
+                aria-expanded={menuOpen}
+                aria-controls="luxfly-site-menu"
               >
                  <Menu size={18} strokeWidth={2} />
                  Menu
               </button>
-              <MagneticButton aria-label="Plan My Trip" className="hidden md:flex min-h-[44px] min-w-[44px] bg-[#A16207] text-white border-none px-6 md:px-8 py-3 md:py-3.5 rounded-full text-xs md:text-sm font-medium shadow-sm hover:bg-[#8B5506] transition-colors tracking-wide cursor-pointer z-50 pointer-events-auto">
+              <MagneticButton
+                type="button"
+                aria-label="Plan My Trip"
+                onClick={() => scrollToSection('cta')}
+                className="hidden md:flex min-h-[44px] min-w-[44px] bg-[#A16207] text-white border-none px-6 md:px-8 py-3 md:py-3.5 rounded-full text-xs md:text-sm font-medium shadow-sm hover:bg-[#8B5506] transition-colors duration-200 tracking-wide cursor-pointer z-50 pointer-events-auto"
+              >
                  Plan My Trip
               </MagneticButton>
            </div>
@@ -158,7 +184,12 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             <p className="text-[#292524] max-w-sm md:max-w-md text-center text-sm md:text-base font-medium leading-relaxed px-4">
                Curated journeys to the world's most extraordinary<br className="hidden md:block"/> destinations. We plan, you travel.
             </p>
-            <MagneticButton aria-label="Plan My Trip Main" className="mt-4 md:mt-6 min-h-[44px] min-w-[44px] bg-[#1C1917] text-white px-8 md:px-10 py-3.5 md:py-4 rounded-full text-xs md:text-sm font-semibold shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-shadow pointer-events-auto tracking-wide cursor-pointer">
+            <MagneticButton
+              type="button"
+              aria-label="Plan My Trip Main"
+              onClick={() => scrollToSection('cta')}
+              className="mt-4 md:mt-6 min-h-[44px] min-w-[44px] bg-[#1C1917] text-white px-8 md:px-10 py-3.5 md:py-4 rounded-full text-xs md:text-sm font-semibold shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-shadow duration-200 pointer-events-auto tracking-wide cursor-pointer"
+            >
                Plan My Trip
             </MagneticButton>
         </motion.div>
@@ -214,7 +245,12 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                Let us take care of the planning while you enjoy meaningful travel experiences crafted just for you.
             </p>
             <div className="mt-2">
-               <MagneticButton aria-label="Explore Destinations" className="mt-8 min-h-[44px] min-w-[44px] bg-white text-black font-medium text-[15px] px-[26px] py-[12px] rounded-full shadow-lg hover:shadow-2xl hover:scale-105 transition-all cursor-pointer pointer-events-auto">
+               <MagneticButton
+                 type="button"
+                 aria-label="Explore Destinations"
+                 onClick={() => scrollToSection('destinations')}
+                 className="mt-8 min-h-[44px] min-w-[44px] bg-white text-black font-medium text-[15px] px-[26px] py-[12px] rounded-full shadow-lg hover:shadow-2xl transition-shadow duration-200 cursor-pointer pointer-events-auto"
+               >
                   Explore Destinations
                </MagneticButton>
             </div>
@@ -301,7 +337,12 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             <p className="text-white/80 text-sm leading-relaxed mb-6">
                For over 10 years, LuxFly has been crafting unforgettable travel experiences. We don't just book trips — we create memories that last a lifetime. Our team of travel experts has personally visited every destination we recommend.
             </p>
-            <MagneticButton aria-label="Meet Our Team" className="min-h-[44px] min-w-[44px] bg-transparent border border-[#A16207]/80 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#A16207] hover:text-white transition-colors duration-200 pointer-events-auto cursor-pointer">
+            <MagneticButton
+              type="button"
+              aria-label="Meet Our Team"
+              onClick={() => scrollToSection('story')}
+              className="min-h-[44px] min-w-[44px] bg-transparent border border-[#A16207]/80 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#A16207] hover:text-white transition-colors duration-200 pointer-events-auto cursor-pointer"
+            >
                Meet Our Team
             </MagneticButton>
          </motion.div>
@@ -343,8 +384,8 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                      viewport={{ once: true }}
                      className="bg-black/45 backdrop-blur-md border border-white/12 p-6 rounded-2xl transition-colors duration-200"
                   >
-                     <div className="flex gap-1 mb-3">
-                        {[...Array(5)].map((_, j) => <Star key={j} size={14} className="fill-[#A16207] text-[#A16207]" />)}
+                     <div className="flex gap-1 mb-3" aria-label="5 out of 5 stars">
+                        {[...Array(5)].map((_, j) => <Star key={j} size={14} className="fill-[#A16207] text-[#A16207]" aria-hidden="true" />)}
                      </div>
                      <p className="text-sm text-white/90 leading-relaxed mb-4 italic">"{t.text}"</p>
                      <div>
@@ -490,6 +531,8 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-8"
+                  role="status"
+                  aria-live="polite"
                >
                   <div className="w-16 h-16 bg-[#A16207] rounded-full flex items-center justify-center mx-auto mb-6">
                      <Check size={32} className="text-white" />

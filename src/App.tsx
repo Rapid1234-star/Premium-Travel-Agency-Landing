@@ -84,6 +84,10 @@ function LuxFlyApp() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.9, ease: 'easeInOut' }}
               className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0C0A09]"
+              role="status"
+              aria-busy="true"
+              aria-live="polite"
+              aria-label="Loading LuxFly"
             >
               <motion.div
                 className="flex flex-col items-center"
@@ -97,7 +101,7 @@ function LuxFlyApp() {
                   </svg>
                   LuxFly
                 </h1>
-                <div className="w-40 h-[2px] bg-white/15 rounded-full overflow-hidden relative">
+                <div className="w-40 h-[2px] bg-white/15 rounded-full overflow-hidden relative" aria-hidden="true">
                   <motion.div
                     className="absolute left-0 top-0 h-full bg-[#A16207]"
                     initial={{ width: '12%' }}
@@ -162,6 +166,10 @@ function LuxFlyApp() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2, ease: 'easeInOut' }}
             className="absolute inset-0 z-[100] flex items-center justify-center bg-black"
+            role="status"
+            aria-busy="true"
+            aria-live="polite"
+            aria-label={framesReady ? 'Preparing cabin' : 'Loading journey'}
           >
             <motion.div
               className="flex flex-col items-center"
@@ -175,7 +183,14 @@ function LuxFlyApp() {
                 </svg>
                 LuxFly
               </h1>
-              <div className="w-48 h-[2px] bg-white/20 rounded-full overflow-hidden relative">
+              <div
+                className="w-48 h-[2px] bg-white/20 rounded-full overflow-hidden relative"
+                role="progressbar"
+                aria-valuenow={loadPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Load progress"
+              >
                 <motion.div
                   className="absolute left-0 top-0 h-full bg-[#e9ecf0]"
                   style={{ width: `${loadPct}%` }}

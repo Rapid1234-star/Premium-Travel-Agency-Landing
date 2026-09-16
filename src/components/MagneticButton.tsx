@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface MagneticButtonProps {
@@ -19,13 +19,23 @@ export function MagneticButton({
   children, 
   className = "", 
   magneticStrength = 0.3,
+  type = 'button',
   ...props 
 }: MagneticButtonProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mq.matches);
+    const onChange = () => setReduceMotion(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current) return;
+    if (reduceMotion || !buttonRef.current) return;
     
     const { clientX, clientY } = e;
     const { width, height, left, top } = buttonRef.current.getBoundingClientRect();
@@ -43,7 +53,7 @@ export function MagneticButton({
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current || !e.touches[0]) return;
+    if (reduceMotion || !buttonRef.current || !e.touches[0]) return;
     
     const { clientX, clientY } = e.touches[0];
     const { width, height, left, top } = buttonRef.current.getBoundingClientRect();
@@ -67,15 +77,16 @@ export function MagneticButton({
   return (
     <motion.button
       ref={buttonRef}
+      type={type}
       onMouseMove={handleMouseMove}
       onMouseLeave={handlePointerEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handlePointerEnd}
       onTouchCancel={handlePointerEnd}
-      animate={{ x: position.x, y: position.y }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
+      animate={reduceMotion ? undefined : { x: position.x, y: position.y }}
+      whileHover={reduceMotion ? undefined : { scale: 1.05 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
       className={`relative ${className}`}
       {...props}
     >

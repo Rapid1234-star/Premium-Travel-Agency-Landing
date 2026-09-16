@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { Menu, X, Star, Check, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MagneticButton } from './MagneticButton';
+import { useAccessibleMenu } from '../hooks/useAccessibleMenu';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -54,6 +55,7 @@ type StaticExperienceProps = {
  */
 export function StaticExperience({ isLoading }: StaticExperienceProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { menuRef, openMenu, closeMenu } = useAccessibleMenu(menuOpen, setMenuOpen);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({ destination: '', style: '', travelers: '2' });
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -66,12 +68,27 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const scrollTo = (id: string) => {
-    setMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({
-      behavior: reduceMotion ? 'auto' : 'smooth',
+  const scrollTo = useCallback((id: string) => {
+    closeMenu();
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
     });
-  };
+  }, [closeMenu, reduceMotion]);
+
+  const handleDestinationSelect = useCallback((destination: string) => {
+    setFormData((prev) => ({ ...prev, destination }));
+    setFormSubmitted(false);
+    requestAnimationFrame(() => {
+      document.getElementById('cta')?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    });
+    window.setTimeout(() => {
+      document.getElementById('static-destination')?.focus();
+    }, 500);
+  }, [reduceMotion]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +107,11 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
       {/* Mobile menu */}
       {createPortal(
         <motion.div
+          ref={menuRef}
+          id="luxfly-static-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site menu"
           className="fixed inset-0 bg-[#0C0A09]/96 z-[100] flex flex-col items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: menuOpen ? 1 : 0 }}
@@ -98,8 +120,9 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
           aria-hidden={!menuOpen}
         >
           <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute top-8 right-6 text-white p-3 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+            type="button"
+            onClick={closeMenu}
+            className="absolute top-[max(2rem,env(safe-area-inset-top))] right-6 text-white p-3 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
             aria-label="Close menu"
           >
             <X size={28} />
@@ -114,6 +137,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
             ].map(([id, label]) => (
               <button
                 key={id}
+                type="button"
                 onClick={() => scrollTo(id)}
                 className="hover:text-[#A16207] transition-colors duration-200 min-h-[44px] cursor-pointer"
               >
@@ -152,13 +176,17 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setMenuOpen(true)}
+              type="button"
+              onClick={(e) => openMenu(e.currentTarget)}
               aria-label="Open menu"
+              aria-expanded={menuOpen}
+              aria-controls="luxfly-static-menu"
               className="flex items-center justify-center text-[#1C1917] bg-[#FAFAF9]/90 border border-[#1C1917]/12 rounded-full p-3 min-h-[44px] min-w-[44px] cursor-pointer hover:bg-white transition-colors duration-200"
             >
               <Menu size={22} strokeWidth={2} />
             </button>
             <MagneticButton
+              type="button"
               aria-label="Plan My Trip"
               onClick={() => scrollTo('cta')}
               className="hidden sm:flex min-h-[44px] bg-[#A16207] text-white border-none px-5 py-2.5 rounded-full text-xs font-medium hover:bg-[#8B5506] transition-colors duration-200 tracking-wide cursor-pointer"
@@ -247,28 +275,37 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
         <div
           className="flex gap-4 overflow-x-auto px-6 sm:px-10 pb-4 snap-x snap-mandatory scroll-px-6"
           style={{ WebkitOverflowScrolling: 'touch' }}
+          role="list"
+          aria-label="Destination carousel"
         >
           {destinations.map((d, i) => (
-            <motion.article
+            <motion.button
               key={d.name}
+              type="button"
+              role="listitem"
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06, ease: easeOut }}
-              className="relative shrink-0 w-[78vw] max-w-[320px] sm:w-[280px] aspect-[3/4] snap-center overflow-hidden rounded-sm"
+              onClick={() => handleDestinationSelect(d.name)}
+              aria-label={`Plan a trip to ${d.name}`}
+              className="relative shrink-0 w-[78vw] max-w-[320px] sm:w-[280px] aspect-[3/4] snap-center overflow-hidden rounded-sm text-left cursor-pointer group"
             >
               <img
                 src={d.img}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
+                alt={`${d.name} — ${d.tag}`}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
               <div className="absolute bottom-0 inset-x-0 p-5">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-[#E8B86D] mb-1">{d.tag}</p>
                 <h3 className="text-2xl font-medium tracking-tight">{d.name}</h3>
+                <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-white/80 tracking-wide">
+                  Plan this trip <ChevronRight size={12} aria-hidden="true" />
+                </span>
               </div>
-            </motion.article>
+            </motion.button>
           ))}
         </div>
 
@@ -450,6 +487,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
                     type="text"
                     placeholder="Where do you want to go?"
                     required
+                    aria-required="true"
                     className="minimal-input"
                     value={formData.destination}
                     onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
@@ -464,6 +502,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
                     id="static-style"
                     name="style"
                     required
+                    aria-required="true"
                     className="minimal-input bg-transparent"
                     value={formData.style}
                     onChange={(e) => setFormData({ ...formData, style: e.target.value })}
@@ -488,6 +527,7 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
                     min={1}
                     max={20}
                     required
+                    aria-required="true"
                     className="minimal-input"
                     value={formData.travelers}
                     onChange={(e) => setFormData({ ...formData, travelers: e.target.value })}
@@ -509,15 +549,18 @@ export function StaticExperience({ isLoading }: StaticExperienceProps) {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-6"
+              role="status"
+              aria-live="polite"
             >
               <div className="w-14 h-14 bg-[#A16207] rounded-full flex items-center justify-center mx-auto mb-5">
-                <Check size={28} className="text-white" />
+                <Check size={28} className="text-white" aria-hidden="true" />
               </div>
               <h3 className="text-2xl font-medium mb-2">Thank you</h3>
               <p className="text-white/70 text-sm mb-6">
                 We&apos;ll be in touch within 24 hours to start crafting your trip.
               </p>
               <button
+                type="button"
                 onClick={() => {
                   setFormSubmitted(false);
                   setFormData({ destination: '', style: '', travelers: '2' });

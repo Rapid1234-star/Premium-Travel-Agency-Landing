@@ -4,6 +4,8 @@ import { motion, useSpring, useMotionValue } from 'framer-motion';
 export function CustomCursor() {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const cursorX = useMotionValue(-9999);
   const cursorY = useMotionValue(-9999);
@@ -12,18 +14,33 @@ export function CustomCursor() {
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
 
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  useEffect(() => {
+    const finePointer = window.matchMedia('(pointer: fine)');
+    const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setIsTouchDevice(!finePointer.matches);
+    setReduceMotion(motionMq.matches);
+
+    const onPointerChange = () => setIsTouchDevice(!finePointer.matches);
+    const onMotionChange = () => setReduceMotion(motionMq.matches);
+    finePointer.addEventListener('change', onPointerChange);
+    motionMq.addEventListener('change', onMotionChange);
+
+    return () => {
+      finePointer.removeEventListener('change', onPointerChange);
+      motionMq.removeEventListener('change', onMotionChange);
+    };
+  }, []);
 
   useEffect(() => {
-    setIsTouchDevice(!window.matchMedia('(pointer: fine)').matches);
-    
+    if (isTouchDevice || reduceMotion) return;
+
     let ticking = false;
     const moveCursor = (e: MouseEvent) => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           cursorX.set(e.clientX);
           cursorY.set(e.clientY);
-          if (!isVisible) setIsVisible(true);
+          setIsVisible(true);
           ticking = false;
         });
         ticking = true;
@@ -42,13 +59,11 @@ export function CustomCursor() {
 
     const handleHoverEnd = () => setIsHovering(false);
 
-    if (!isTouchDevice) {
-      window.addEventListener('mousemove', moveCursor);
-      document.addEventListener('mouseleave', handleMouseLeave);
-      document.addEventListener('mouseenter', handleMouseEnter);
-      window.addEventListener('mouseover', handleHoverStart);
-      window.addEventListener('mouseout', handleHoverEnd);
-    }
+    window.addEventListener('mousemove', moveCursor);
+    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseenter', handleMouseEnter);
+    window.addEventListener('mouseover', handleHoverStart);
+    window.addEventListener('mouseout', handleHoverEnd);
 
     return () => {
       window.removeEventListener('mousemove', moveCursor);
@@ -57,9 +72,9 @@ export function CustomCursor() {
       window.removeEventListener('mouseover', handleHoverStart);
       window.removeEventListener('mouseout', handleHoverEnd);
     };
-  }, [cursorX, cursorY, isVisible, isTouchDevice]);
+  }, [cursorX, cursorY, isTouchDevice, reduceMotion]);
 
-  if (isTouchDevice) return null;
+  if (isTouchDevice || reduceMotion) return null;
 
   return (
     <motion.div
@@ -76,6 +91,7 @@ export function CustomCursor() {
         opacity: isVisible ? 0.9 : 0 
       }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      aria-hidden="true"
     />
   );
 }

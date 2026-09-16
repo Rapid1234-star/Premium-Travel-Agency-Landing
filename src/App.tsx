@@ -4,9 +4,7 @@ import { useProgress } from '@react-three/drei';
 import { JetScene } from './components/JetScene';
 import { CustomCursor } from './components/CustomCursor';
 import { FrameSequence } from './components/FrameSequence';
-import { StaticHero } from './components/StaticHero';
-import { StaticScrollHost } from './components/StaticScrollHost';
-import { OverlayHTML } from './components/OverlayHTML';
+import { StaticExperience } from './components/StaticExperience';
 import { DeviceTierProvider, useDeviceTier } from './hooks/useDeviceTier';
 import { usesCinematicEffects } from './lib/deviceTier';
 
@@ -39,15 +37,13 @@ function LuxFlyApp() {
   );
 
   useEffect(() => {
-    const t = window.setTimeout(() => setMinTimeDone(true), cinematic ? 1600 : 600);
+    const t = window.setTimeout(() => setMinTimeDone(true), cinematic ? 1600 : 500);
     return () => window.clearTimeout(t);
   }, [cinematic]);
 
   useEffect(() => {
-    // Static tier: no frame warm required
     if (!cinematic) {
       setFramesReady(true);
-      return;
     }
   }, [cinematic]);
 
@@ -65,59 +61,99 @@ function LuxFlyApp() {
     const t = window.setTimeout(() => {
       setFramesReady(true);
       setMinTimeDone(true);
-    }, cinematic ? 12000 : 4000);
+    }, cinematic ? 12000 : 3000);
     return () => window.clearTimeout(t);
   }, [cinematic]);
+
+  // Static: native document scroll — cinematic keeps locked viewport + WebGL scroll
+  if (!cinematic) {
+    return (
+      <div className="w-full min-h-[100svh] bg-[#FAFAF9] relative font-sans">
+        <CustomCursor />
+        <div
+          className={isLoading ? 'overflow-hidden h-[100svh]' : ''}
+          style={{ pointerEvents: isLoading ? 'none' : 'auto' }}
+        >
+          <StaticExperience isLoading={isLoading} />
+        </div>
+
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9, ease: 'easeInOut' }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0C0A09]"
+            >
+              <motion.div
+                className="flex flex-col items-center"
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
+                <h1 className="text-3xl md:text-4xl font-light text-white tracking-[0.2em] uppercase mb-4 flex items-center gap-3">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-white">
+                    <path d="M22 2L2 12L9 14.5L16 8L11 16L18 19L22 2Z" fill="currentColor" />
+                  </svg>
+                  LuxFly
+                </h1>
+                <div className="w-40 h-[2px] bg-white/15 rounded-full overflow-hidden relative">
+                  <motion.div
+                    className="absolute left-0 top-0 h-full bg-[#A16207]"
+                    initial={{ width: '12%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 0.85, ease: 'easeOut' }}
+                  />
+                </div>
+                <p className="mt-4 text-[10px] tracking-[0.2em] uppercase text-white/40">
+                  Preparing journey
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-[100svh] bg-black overflow-hidden relative font-sans">
       <CustomCursor />
 
-      {cinematic ? (
-        <>
-          <div className="absolute inset-0 z-0 pointer-events-none w-full h-full">
-            <motion.div
-              style={{ opacity: cloudOpacity }}
-              className="absolute inset-0 w-full h-full bg-cover bg-center"
-              initial={{ backgroundImage: 'url(/new_bg.png)' }}
-            >
-              <div className="absolute inset-0 bg-white/20" />
-              <div className="absolute bottom-0 left-0 w-full h-[35svh] bg-gradient-to-t from-white/95 via-white/50 to-transparent" />
-              <motion.div
-                style={{ opacity: cloudDarkOverlay }}
-                className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black/95"
-              />
-            </motion.div>
+      <div className="absolute inset-0 z-0 pointer-events-none w-full h-full">
+        <motion.div
+          style={{ opacity: cloudOpacity }}
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          initial={{ backgroundImage: 'url(/new_bg.png)' }}
+        >
+          <div className="absolute inset-0 bg-white/20" />
+          <div className="absolute bottom-0 left-0 w-full h-[35svh] bg-gradient-to-t from-white/95 via-white/50 to-transparent" />
+          <motion.div
+            style={{ opacity: cloudDarkOverlay }}
+            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black/95"
+          />
+        </motion.div>
 
-            <motion.div
-              style={{ opacity: frameOpacity }}
-              className="absolute inset-0 w-full h-full"
-            >
-              <FrameSequence
-                scrollOffset={scrollOffset}
-                eagerWarm
-                tier={tier}
-                onCriticalReady={() => setFramesReady(true)}
-              />
-              <motion.div
-                style={{ opacity: windowScrim }}
-                className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black"
-              />
-            </motion.div>
-          </div>
+        <motion.div
+          style={{ opacity: frameOpacity }}
+          className="absolute inset-0 w-full h-full"
+        >
+          <FrameSequence
+            scrollOffset={scrollOffset}
+            eagerWarm
+            tier={tier}
+            onCriticalReady={() => setFramesReady(true)}
+          />
+          <motion.div
+            style={{ opacity: windowScrim }}
+            className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black"
+          />
+        </motion.div>
+      </div>
 
-          <div className="absolute inset-0 w-full h-full z-10">
-            <JetScene isLoading={isLoading} scrollOffset={scrollOffset} tier={tier} />
-          </div>
-        </>
-      ) : (
-        <>
-          <StaticHero scrollOffset={scrollOffset} />
-          <StaticScrollHost isLoading={isLoading} scrollOffset={scrollOffset}>
-            <OverlayHTML isLoading={isLoading} scrollOffset={scrollOffset} />
-          </StaticScrollHost>
-        </>
-      )}
+      <div className="absolute inset-0 w-full h-full z-10">
+        <JetScene isLoading={isLoading} scrollOffset={scrollOffset} tier={tier} />
+      </div>
 
       <AnimatePresence>
         {isLoading && (
@@ -147,11 +183,7 @@ function LuxFlyApp() {
                 />
               </div>
               <p className="mt-4 text-[10px] tracking-[0.2em] uppercase text-white/40">
-                {cinematic
-                  ? framesReady
-                    ? 'Preparing cabin'
-                    : 'Loading journey'
-                  : 'Preparing journey'}
+                {framesReady ? 'Preparing cabin' : 'Loading journey'}
               </p>
             </motion.div>
           </motion.div>

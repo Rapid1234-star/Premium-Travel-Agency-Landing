@@ -73,6 +73,8 @@ export function MagneticButton({
       onTouchEnd={handlePointerEnd}
       onTouchCancel={handlePointerEnd}
       animate={{ x: position.x, y: position.y }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
       className={`relative ${className}`}
       {...props}

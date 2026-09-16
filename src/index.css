@@ -61,7 +61,7 @@ input:focus-visible {
 }
 
 .minimal-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .minimal-input-highlight {
@@ -78,4 +78,30 @@ input:focus-visible {
 
 .minimal-input:focus ~ .minimal-input-highlight {
   transform: translateX(-50%) scaleX(1);
+}
+
+/* Gold accent on focus */
+.minimal-input:focus {
+  border-bottom-color: #A16207;
+}
+
+.minimal-input-highlight {
+  background: #A16207;
+}
+
+/* Button hover states */
+button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.02);
+}
+
+/* Social proof cards - better contrast on mobile */
+@media (max-width: 768px) {
+  .testimonial-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+  }
 }

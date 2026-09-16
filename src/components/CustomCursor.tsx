@@ -5,8 +5,8 @@ export function CustomCursor() {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
+  const cursorX = useMotionValue(-9999);
+  const cursorY = useMotionValue(-9999);
 
   const springConfig = { damping: 25, stiffness: 400 };
   const cursorXSpring = useSpring(cursorX, springConfig);
@@ -63,7 +63,7 @@ export function CustomCursor() {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 w-4 h-4 bg-white rounded-full pointer-events-none z-[9999] mix-blend-difference"
+      className="fixed top-0 left-0 w-4 h-4 bg-white/80 rounded-full pointer-events-none z-[9999] mix-blend-difference"
       style={{
         x: cursorXSpring,
         y: cursorYSpring,
@@ -73,7 +73,7 @@ export function CustomCursor() {
       initial={{ scale: 0, opacity: 0 }}
       animate={{ 
         scale: isVisible ? (isHovering ? 2.5 : 1) : 0, 
-        opacity: isVisible ? 1 : 0 
+        opacity: isVisible ? 0.9 : 0 
       }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     />

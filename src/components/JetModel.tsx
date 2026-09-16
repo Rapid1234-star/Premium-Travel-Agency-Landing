@@ -8,10 +8,23 @@ export function JetModel() {
   const beaconLightRef = useRef<THREE.PointLight>(null);
   const strobeLightRef = useRef<THREE.PointLight>(null);
   const beaconMeshRef = useRef<THREE.Mesh>(null);
+  const [mobileScale, setMobileScale] = useState(0.85);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
+    const updateScale = () => {
+      const w = window.innerWidth;
+      if (w < 480) setMobileScale(0.4);       // Small phones
+      else if (w < 640) setMobileScale(0.5);  // Large phones
+      else if (w < 768) setMobileScale(0.55); // Mobile landscape
+      else if (w < 1024) setMobileScale(0.7); // Tablets
+      else setMobileScale(0.85);              // Desktop
+      
+      setIsMobile(w < 768);
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
   }, []);
   
   useFrame((state) => {
@@ -108,7 +121,7 @@ export function JetModel() {
   }, []);
 
   return (
-      <group ref={jetRef} position={[0, -0.3, 0]} scale={isMobile ? 0.6 : 0.85} rotation={[0.1, -0.8, -0.05]}>
+      <group ref={jetRef} position={[0, -0.3, 0]} scale={mobileScale} rotation={[0.1, -0.8, -0.05]}>
 
         {/* ══════════════════ FUSELAGE ══════════════════ */}
         <mesh material={materials.body} scale={[4.8, 0.52, 0.52]} castShadow receiveShadow>

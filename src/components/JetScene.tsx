@@ -19,6 +19,11 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
   // Smoothstep function for buttery transitions
   const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
+  // Hero entrance delay state
+  const entranceStartTime = useRef<number | null>(null);
+  const ENTRANCE_DELAY = 0.8; // seconds before jet starts moving
+  const ENTRANCE_DURATION = 1.5; // seconds for smooth entrance animation
+
   useFrame((state, delta) => {
     if (scrollOffset) {
       scrollOffset.set(scroll.offset);
@@ -33,6 +38,18 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
       return;
     }
 
+    // Initialize entrance timer on first frame
+    if (entranceStartTime.current === null) {
+      entranceStartTime.current = state.clock.elapsedTime;
+    }
+
+    // Calculate entrance progress (0 = hidden, 1 = fully visible)
+    const elapsed = state.clock.elapsedTime - entranceStartTime.current;
+    const entranceProgress = Math.min(1, Math.max(0, (elapsed - ENTRANCE_DELAY) / ENTRANCE_DURATION));
+    
+    // Smooth entrance with easeOutCubic for premium feel
+    const easedEntrance = 1 - Math.pow(1 - entranceProgress, 3);
+    
     // Exponential decay lerp — truly frame-rate independent
     const lerpFactor = 1 - Math.pow(0.001, delta);
 
@@ -72,11 +89,23 @@ function ScrollManager({ children, scrollOffset }: { children: React.ReactNode, 
     targetPosition.set(bx, by, bz);
     targetRotation.set(brx, bry, brz);
 
+    // Apply entrance animation - jet starts lower and fades in
+    const entranceYOffset = (1 - easedEntrance) * -3; // Start 3 units lower
+    const entranceZOffset = (1 - easedEntrance) * 2;  // Start 2 units further back
+    targetPosition.y += entranceYOffset;
+    targetPosition.z += entranceZOffset;
+
     groupRef.current.position.lerp(targetPosition, lerpFactor);
 
     const currentQuat = groupRef.current.quaternion;
     const targetQuat = new THREE.Quaternion().setFromEuler(targetRotation);
     currentQuat.slerp(targetQuat, lerpFactor);
+
+    // Apply scale for entrance animation (0.5 → 1.0)
+    const targetScale = 0.5 + easedEntrance * 0.5;
+    const currentScale = groupRef.current.scale.x;
+    const newScale = currentScale + (targetScale - currentScale) * lerpFactor;
+    groupRef.current.scale.setScalar(newScale);
   });
 
   return <group ref={groupRef}>{children}</group>;

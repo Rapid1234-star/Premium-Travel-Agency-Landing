@@ -168,7 +168,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       <section id="destinations" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
             style={{ opacity: earlyCardOpacity }}
-            className="text-center max-w-2xl z-50 rounded-[2rem] bg-black/40 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+            className="text-center max-w-2xl z-50 rounded-3xl bg-black/50 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
          >
             <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#A16207] uppercase mb-4 block">
                What We Offer
@@ -202,7 +202,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
             style={{ opacity: postOpenCardsOpacity }}
             className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center z-50"
          >
-            <div className="rounded-[2rem] bg-black/45 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+            <div className="rounded-3xl bg-black/50 backdrop-blur-md border border-white/15 px-8 py-10 md:px-12 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 
                className="text-[clamp(2.2rem,5vw,3.5rem)] font-medium leading-[1.1] text-white"
             >
@@ -226,7 +226,7 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       <section id="how-it-works" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-16">
          <motion.div 
             style={{ opacity: postOpenCardsOpacity }}
-            className="max-w-4xl w-full z-50 rounded-[2rem] bg-black/45 backdrop-blur-md border border-white/15 px-6 py-10 md:px-10 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+            className="max-w-4xl w-full z-50 rounded-3xl bg-black/50 backdrop-blur-md border border-white/15 px-6 py-10 md:px-10 md:py-12 shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
          >
             <div className="text-center mb-12">
                <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#E8B86D] uppercase mb-4 block">
@@ -250,9 +250,9 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                      viewport={{ once: true }}
                      className="text-center md:text-left"
                   >
-                     <div className="text-5xl font-bold text-[#C4A574] mb-4">{step.num}</div>
+                     <div className="text-5xl font-light text-[#A16207]/45 mb-4">{step.num}</div>
                      <h3 className="text-xl font-medium text-white mb-3">{step.title}</h3>
-                     <p className="text-sm text-white/85 leading-relaxed">{step.desc}</p>
+                     <p className="text-sm text-white/80 leading-relaxed">{step.desc}</p>
                   </motion.div>
                ))}
             </div>
@@ -263,10 +263,10 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       <section id="experience" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
             style={{ opacity: postOpenCardsOpacity }}
-            className="glass-glow bg-black/55 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] text-white max-w-xl z-50 w-full border border-white/15"
+            className="bg-black/50 backdrop-blur-md p-8 md:p-10 rounded-3xl text-white max-w-xl z-50 w-full border border-white/15"
          >
             <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-light mb-4 tracking-tight leading-none">Seamless<br/><span className="font-medium">Experience.</span></h2>
-            <p className="text-white/85 text-sm leading-relaxed mb-6">
+            <p className="text-white/80 text-sm leading-relaxed mb-6">
                From the moment you inquire to the moment you return home, every detail is handled. Personal itineraries, 24/7 concierge support, and exclusive access to hidden gems.
             </p>
 <div className="grid grid-cols-2 gap-4">
@@ -294,14 +294,14 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
       <section id="story" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-24">
          <motion.div 
             style={{ opacity: postOpenCardsOpacity }}
-            className="glass-glow bg-black/55 backdrop-blur-2xl p-8 md:p-10 rounded-[2rem] text-white max-w-xl z-50 text-center border border-white/15"
+            className="bg-black/50 backdrop-blur-md p-8 md:p-10 rounded-3xl text-white max-w-xl z-50 text-center border border-white/15"
          >
             <span className="text-xs tracking-[0.2em] text-[#E8B86D] uppercase mb-4 block font-semibold">Our Story</span>
             <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-medium mb-6 tracking-tight leading-none">A Decade of Dream<br/>Journeys.</h2>
-            <p className="text-white/85 text-sm leading-relaxed mb-6">
+            <p className="text-white/80 text-sm leading-relaxed mb-6">
                For over 10 years, LuxFly has been crafting unforgettable travel experiences. We don't just book trips — we create memories that last a lifetime. Our team of travel experts has personally visited every destination we recommend.
             </p>
-            <MagneticButton aria-label="Meet Our Team" className="min-h-[44px] min-w-[44px] bg-transparent border border-[#E8B86D]/70 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#A16207] hover:text-white transition-colors pointer-events-auto cursor-pointer">
+            <MagneticButton aria-label="Meet Our Team" className="min-h-[44px] min-w-[44px] bg-transparent border border-[#A16207]/80 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#A16207] hover:text-white transition-colors duration-200 pointer-events-auto cursor-pointer">
                Meet Our Team
             </MagneticButton>
          </motion.div>
@@ -309,9 +309,17 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
 
       {/* ═══════ SECTION 7: SOCIAL PROOF ═══════ */}
       <section id="social-proof" className="h-screen w-full relative flex flex-col items-center justify-center px-8 md:px-16">
+         {/* Soft handoff toward sketchbook cream */}
+         <div
+           className="absolute inset-x-0 bottom-0 h-[28%] z-[1] pointer-events-none"
+           style={{
+             background: 'linear-gradient(180deg, transparent 0%, rgba(239,232,220,0.22) 100%)',
+           }}
+           aria-hidden="true"
+         />
          <motion.div 
             style={{ opacity: postOpenCardsOpacity }}
-            className="max-w-5xl w-full z-50"
+            className="max-w-5xl w-full z-50 relative"
          >
             <div className="text-center mb-10">
                <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#A16207] uppercase mb-4 block">
@@ -333,22 +341,22 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                      whileInView={{ opacity: 1, y: 0 }}
                      transition={{ duration: 0.6, delay: i * 0.1 }}
                      viewport={{ once: true }}
-                     className="bg-black/50 backdrop-blur-md border border-white/15 p-6 rounded-2xl"
+                     className="bg-black/45 backdrop-blur-md border border-white/12 p-6 rounded-2xl transition-colors duration-200"
                   >
                      <div className="flex gap-1 mb-3">
-                        {[...Array(5)].map((_, j) => <Star key={j} size={14} className="fill-[#E8B86D] text-[#E8B86D]" />)}
+                        {[...Array(5)].map((_, j) => <Star key={j} size={14} className="fill-[#A16207] text-[#A16207]" />)}
                      </div>
-                     <p className="text-sm text-white leading-relaxed mb-4 italic">"{t.text}"</p>
+                     <p className="text-sm text-white/90 leading-relaxed mb-4 italic">"{t.text}"</p>
                      <div>
                         <div className="text-white font-medium text-sm">{t.name}</div>
-                        <div className="text-[10px] text-white/70 uppercase tracking-wider">{t.trip}</div>
+                        <div className="text-[10px] text-white/60 uppercase tracking-wider">{t.trip}</div>
                      </div>
                   </motion.div>
                ))}
             </div>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-10">
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-10">
                {['Condé Nast', 'Travel + Leisure', 'AFAR', 'Lonely Planet'].map((brand, i) => (
-                  <span key={i} className="text-white text-xs md:text-sm font-medium tracking-wider bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/25">{brand}</span>
+                  <span key={i} className="text-white/85 text-[11px] md:text-xs font-medium tracking-wider bg-white/10 px-3 py-1.5 rounded-full border border-white/15">{brand}</span>
                ))}
             </div>
          </motion.div>
@@ -356,25 +364,35 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
 
       {/* ═══════ SECTION 8: DESTINATIONS SKETCHBOOK ═══════ */}
       <section id="sketchbook" className="h-screen w-full relative flex flex-col items-center justify-center pointer-events-none overflow-hidden">
-        {/* Soft blend from previous dark section into warm desk */}
+        {/* Longer dark→cream→dark bridge so the book feels like a LuxFly chapter */}
         <div
           className="absolute inset-0 z-0"
           style={{
-            background:
-              'linear-gradient(180deg, rgba(12,10,9,0.55) 0%, rgba(239,232,220,0) 14%), radial-gradient(ellipse 90% 70% at 50% 42%, rgba(255,252,245,0.95) 0%, transparent 68%), radial-gradient(ellipse 70% 50% at 50% 100%, rgba(180,150,110,0.14) 0%, transparent 55%), #efe8dc',
+            background: [
+              'linear-gradient(180deg, rgba(12,10,9,0.92) 0%, rgba(12,10,9,0.55) 10%, rgba(239,232,220,0) 28%)',
+              'linear-gradient(0deg, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.35) 12%, rgba(239,232,220,0) 26%)',
+              'radial-gradient(ellipse 90% 70% at 50% 42%, rgba(255,252,245,0.92) 0%, transparent 68%)',
+              'radial-gradient(ellipse 70% 50% at 50% 100%, rgba(180,150,110,0.14) 0%, transparent 55%)',
+              '#efe8dc',
+            ].join(', '),
           }}
         />
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.1, ease: 'easeOut' }}
-          viewport={{ once: true, margin: "-10%" }}
-          className="w-full h-full pointer-events-auto relative z-[2] pt-2"
-        >
+
+        {/* Chapter framing — LuxFly voice over the desk */}
+        <div className="absolute top-0 inset-x-0 z-[3] pt-5 md:pt-7 px-6 pointer-events-none flex flex-col items-center text-center">
+          <span className="text-[10px] md:text-[11px] font-semibold tracking-[0.28em] text-[#A16207] uppercase">
+            Destinations · Sketchbook
+          </span>
+          <p className="mt-2 text-[13px] md:text-sm text-[#1C1917]/75 font-medium max-w-md leading-relaxed">
+            Flip through places we&apos;ve lived — then pick one to begin.
+          </p>
+          <div className="mt-3 w-10 h-px bg-[#A16207]/55" aria-hidden="true" />
+        </div>
+
+        <div className="w-full h-full pointer-events-auto relative z-[2] pt-16 md:pt-20">
           {sketchbookReady ? (
-            <iframe 
-              src="/sketchbook/index.html" 
+            <iframe
+              src="/sketchbook/index.html"
               title="LuxFly Destinations Sketchbook"
               className="w-full h-full border-0 outline-none block"
               style={{ background: 'transparent', colorScheme: 'light' }}
@@ -382,44 +400,58 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full" aria-hidden="true" />
+            <div className="w-full h-full flex items-center justify-center" aria-hidden="true">
+              <span className="text-[#1C1917]/35 text-xs tracking-[0.2em] uppercase">Opening sketchbook…</span>
+            </div>
           )}
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══════ SECTION 9: CTA / BOOKING FORM ═══════ */}
       <section id="cta" className="h-screen w-full relative flex flex-col items-center justify-center px-4">
-         <motion.div 
-            initial={{ opacity: 0, y: 50 }}
+         {/* Continuity from sketchbook cream into final dark chapter */}
+         <div
+           className="absolute inset-0 z-0 pointer-events-none"
+           style={{
+             background:
+               'linear-gradient(180deg, rgba(239,232,220,0.35) 0%, rgba(12,10,9,0) 18%), radial-gradient(ellipse 80% 50% at 50% 100%, rgba(161,98,7,0.12) 0%, transparent 55%)',
+           }}
+           aria-hidden="true"
+         />
+         <motion.div
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            viewport={{ once: true, margin: "-20%" }}
-            className="glass-glow bg-black/75 backdrop-blur-2xl p-6 md:p-10 lg:p-14 rounded-[2rem] shadow-2xl flex flex-col items-center text-white z-50 w-[95%] max-w-[500px] border border-white/15"
+            transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, margin: '-18%' }}
+            className="relative z-50 bg-black/70 backdrop-blur-md p-7 md:p-10 lg:p-12 rounded-3xl shadow-2xl flex flex-col items-center text-white w-[95%] max-w-[480px] border border-white/15"
          >
             {!formSubmitted ? (
                <>
-                  <h2 className="text-3xl md:text-4xl font-medium mb-4">Start Planning</h2>
-                  <p className="text-white/80 text-center mb-8 max-w-sm text-sm">
-                     Tell us your dream destination and we'll craft the perfect itinerary.
+                  <span className="text-[10px] font-semibold tracking-[0.28em] text-[#E8B86D] uppercase mb-3">
+                    Begin your journey
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-medium mb-3 tracking-tight">Start Planning</h2>
+                  <p className="text-white/70 text-center mb-8 max-w-sm text-sm leading-relaxed">
+                     Tell us your dream destination and we&apos;ll craft the perfect itinerary.
                   </p>
                   <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
                      <div className="minimal-input-container">
                         <label htmlFor="destination" className="text-[11px] text-[#E7E5E4] uppercase tracking-wider mb-1 block font-semibold">Destination</label>
-                        <input 
-                           id="destination" name="destination" type="text" 
-                           placeholder="Where do you want to go?" 
-                           required aria-required="true" 
-                           className="minimal-input" 
+                        <input
+                           id="destination" name="destination" type="text"
+                           placeholder="Where do you want to go?"
+                           required aria-required="true"
+                           className="minimal-input"
                            value={formData.destination}
                            onChange={(e) => setFormData({...formData, destination: e.target.value})}
                         />
                         <div className="minimal-input-highlight"></div>
                      </div>
-                     
+
                      <div className="minimal-input-container">
                         <label htmlFor="travel-style" className="text-[11px] text-[#E7E5E4] uppercase tracking-wider mb-1 block font-semibold">Travel Style</label>
-                        <select 
-                           id="travel-style" name="style" 
+                        <select
+                           id="travel-style" name="style"
                            required aria-required="true"
                            className="minimal-input bg-transparent"
                            value={formData.style}
@@ -437,9 +469,9 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
 
                      <div className="minimal-input-container">
                         <label htmlFor="travelers" className="text-[11px] text-[#E7E5E4] uppercase tracking-wider mb-1 block font-semibold">Number of Travelers</label>
-                        <input 
+                        <input
                            id="travelers" name="travelers" type="number" min="1" max="20"
-                           placeholder="2" 
+                           placeholder="2"
                            required aria-required="true"
                            className="minimal-input"
                            value={formData.travelers}
@@ -448,14 +480,14 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                         <div className="minimal-input-highlight"></div>
                      </div>
 
-                     <MagneticButton type="submit" aria-label="Start Planning" className="min-h-[44px] w-full bg-[#A16207] text-white font-bold text-sm py-4 rounded-xl mt-2 hover:bg-[#8B5506] transition-colors cursor-pointer">
+                     <MagneticButton type="submit" aria-label="Start Planning" className="min-h-[48px] w-full bg-[#A16207] text-white font-semibold text-sm py-4 rounded-xl mt-1 hover:bg-[#8B5506] transition-colors duration-200 cursor-pointer">
                         Start Planning
                      </MagneticButton>
                   </form>
                </>
             ) : (
-               <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
+               <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-8"
                >
@@ -463,10 +495,10 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
                      <Check size={32} className="text-white" />
                   </div>
                   <h3 className="text-2xl font-medium text-white mb-3">Thank You!</h3>
-                  <p className="text-gray-300 text-sm mb-6">We'll be in touch within 24 hours to start crafting your perfect trip.</p>
-                  <button 
+                  <p className="text-white/70 text-sm mb-6">We&apos;ll be in touch within 24 hours to start crafting your perfect trip.</p>
+                  <button
                      onClick={() => { setFormSubmitted(false); setFormData({ destination: '', style: '', travelers: '2' }); }}
-                     className="text-[#A16207] text-sm font-medium hover:underline cursor-pointer"
+                     className="text-[#E8B86D] text-sm font-medium hover:underline cursor-pointer min-h-[44px]"
                   >
                      Plan Another Trip
                   </button>

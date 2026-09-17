@@ -27,12 +27,12 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}
 html{-webkit-text-size-adjust:100%}
 html{background:var(--desk)}
 body{
-  font-family:var(--font);font-weight:400;background:var(--desk);color:var(--ink);
+  font-family:var(--font);font-weight:400;color:var(--ink);
   -webkit-font-smoothing:antialiased;
   display:flex;align-items:center;justify-content:center;
+  /* Keep desk tone even — a bright radial here read as a white box when the book tilts/flips */
   background:
-    radial-gradient(ellipse 90% 70% at 50% 42%, rgba(255,252,245,.9) 0%, transparent 68%),
-    radial-gradient(ellipse 70% 55% at 50% 100%, rgba(180,150,110,.12) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(180,150,110,.10) 0%, transparent 55%),
     var(--desk);
 }
 button{font:inherit}
@@ -45,12 +45,12 @@ img{-webkit-user-drag:none;user-drag:none}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:12px;width:100%;height:100%;position:relative;z-index:2;
   padding:clamp(18px,3.5vh,36px) 12px clamp(14px,2.8vh,28px);
-  box-sizing:border-box;
+  box-sizing:border-box;background:transparent;
 }
 .sb-stage{
   display:flex;align-items:center;justify-content:center;width:100%;
   position:relative;flex:1 1 auto;min-height:0;
-  touch-action:pan-y;
+  touch-action:pan-y;background:transparent;
 }
 .sb-arrow{
   flex:none;display:inline-flex;align-items:center;justify-content:center;padding:10px 6px;
@@ -67,14 +67,16 @@ img{-webkit-user-drag:none;user-drag:none}
   max-height:calc(100% - 4px);
   aspect-ratio:var(--book-ratio);
   max-width:min(1040px, calc((100vh - 200px) * 1376 / 768));
-  perspective:1750px;perspective-origin:50% 46%;
+  background:var(--desk);
+  perspective:2200px;perspective-origin:50% 46%;
 }
 .sb-tilt{
   position:relative;width:100%;height:100%;
   transform-style:preserve-3d;
   transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--zoom,1));
-  will-change:transform;
-  filter:drop-shadow(0 18px 28px rgba(58,44,26,.18)) drop-shadow(0 6px 10px rgba(58,44,26,.12));
+  background:var(--desk);
+  z-index:1;
+  border-radius:1.8% / 3.2%;
 }
 .sb-book{
   position:relative;width:100%;height:100%;
@@ -82,48 +84,55 @@ img{-webkit-user-drag:none;user-drag:none}
   transform-style:preserve-3d;z-index:1;
   border-radius:1.8% / 3.2%;
   overflow:hidden;
+  background:var(--desk);
+  /* translateZ base layer stops GPU clear-to-white seams during curl */
+  transform:translateZ(0);
   box-shadow:
     0 1px 0 rgba(255,252,245,.55) inset,
-    0 22px 40px rgba(58,44,26,.16),
-    0 8px 14px rgba(58,44,26,.10);
+    0 22px 40px rgba(58,44,26,.18),
+    0 10px 18px rgba(58,44,26,.12),
+    0 4px 8px rgba(58,44,26,.08);
+}
+.sb-under{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:var(--desk) center/cover no-repeat;
+  border-radius:inherit;
 }
 
 .sb-cast{position:absolute;pointer-events:none;z-index:0}
 .sb-cast.ambient{
   left:4%;right:4%;top:18%;bottom:-2%;
   background:radial-gradient(50% 50% at 50% 58%,
-    rgba(58,44,26,.20) 0%,rgba(58,44,26,.10) 42%,rgba(58,44,26,0) 76%);
-  filter:blur(28px);
+    rgba(58,44,26,.18) 0%,rgba(58,44,26,.08) 42%,rgba(58,44,26,0) 76%);
   opacity:calc(1 - var(--shade,0) * .42);
 }
 .sb-cast.contact{
   left:8%;right:8%;top:58%;bottom:4%;
   background:radial-gradient(50% 44% at 50% 42%,
-    rgba(44,32,14,.24) 0%,rgba(44,32,14,.10) 48%,rgba(44,32,14,0) 78%);
-  filter:blur(12px);
+    rgba(44,32,14,.20) 0%,rgba(44,32,14,.08) 48%,rgba(44,32,14,0) 78%);
   opacity:calc(1 - var(--shade,0) * .5);
 }
 .sb-cast.hair{
   left:11%;right:11%;top:68%;bottom:12%;
   background:radial-gradient(50% 52% at 50% 40%,
-    rgba(40,28,10,.16) 0%,rgba(40,28,10,0) 76%);
-  filter:blur(4px);
+    rgba(40,28,10,.12) 0%,rgba(40,28,10,0) 76%);
   opacity:calc(1 - var(--shade,0) * .62);
 }
-.sb-full{position:absolute;inset:0;overflow:hidden;border-radius:1.6% / 2.8%}
+.sb-full{position:absolute;inset:0;overflow:hidden;border-radius:1.6% / 2.8%;background:var(--desk)}
 .sb-full img{
   width:100%;height:100%;object-fit:cover;object-position:center;
-  display:block;
+  display:block;background:var(--desk);
   /* Crop the harsh thin cover stroke so the spread reads as paper on the desk */
   transform:scale(1.042);
   transform-origin:center center;
 }
-.sb-half{position:absolute;top:0;bottom:0;width:50%;overflow:hidden}
+.sb-half{position:absolute;top:0;bottom:0;width:50%;overflow:hidden;background:transparent}
 .sb-half.left{left:0}
 .sb-half.right{left:50%}
 .sb-half-img{
   width:200%;max-width:none;height:100%;object-fit:cover;display:block;
   transform:scale(1.042);transform-origin:center center;
+  background:var(--desk);
 }
 .sb-half.left .sb-half-img{transform-origin:left center;object-position:left center}
 .sb-half.right .sb-half-img{margin-left:-100%;transform-origin:right center;object-position:right center}
@@ -140,6 +149,7 @@ img{-webkit-user-drag:none;user-drag:none}
   position:absolute;top:0;height:100%;
   width:calc(var(--bw,0px) * var(--span));
   transform-style:preserve-3d;z-index:6;
+  background:var(--paper);
 }
 .curl.next{left:50%;transform-origin:left center;transform:rotateY(calc(-1 * var(--tt,0deg)))}
 .curl.prev{right:50%;transform-origin:right center;transform:rotateY(var(--tt,0deg))}
@@ -147,6 +157,7 @@ img{-webkit-user-drag:none;user-drag:none}
   position:absolute;top:0;height:100%;
   width:calc(var(--bw,0px) * var(--span) / var(--n));
   transform-style:preserve-3d;
+  background:var(--paper);
 }
 .curl.next .strip{transform-origin:left center}
 .curl.prev .strip{transform-origin:right center}
@@ -155,16 +166,21 @@ img{-webkit-user-drag:none;user-drag:none}
 .curl.next .strip .strip{left:100%;transform:rotateY(var(--td,0deg))}
 .curl.prev .strip .strip{right:100%;transform:rotateY(calc(-1 * var(--td,0deg)))}
 .face{
-  position:absolute;top:0;bottom:0;left:0;right:-1.1px;
+  position:absolute;top:0;bottom:0;left:0;right:-3.5px;
   backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  background-repeat:no-repeat;background-size:var(--bw,0px) auto;
+  background-color:var(--paper);
+  background-repeat:no-repeat;
+  background-size:var(--bw,0px) 100%;
+  background-position-y:center;
+  /* Own compositor layer with paper clear color — not browser white */
+  transform:translateZ(0.1px);
 }
-.face.back{transform:rotateY(180deg)}
-.face .sh,.face .gl{
+.face.back{transform:rotateY(180deg) translateZ(0.1px)}
+.face .sh{
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
   mask-image:linear-gradient(180deg,transparent 0,#000 5.2%,#000 94.8%,transparent 100%);
 }
-.strip.edge .face .sh,.strip.edge .face .gl{
+.strip.edge .face .sh{
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
   mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%),var(--hf);
   -webkit-mask-composite:source-in;mask-composite:intersect;
@@ -181,11 +197,6 @@ img{-webkit-user-drag:none;user-drag:none}
 }
 .curl.next .face.back .sh,.curl.prev .face.front .sh{
   background:linear-gradient(90deg,rgba(58,43,20,var(--a2,0)),rgba(58,43,20,var(--a1,0)));
-}
-.face .gl{
-  position:absolute;left:0;right:0;top:var(--pg,21.8%);bottom:var(--pg,21.8%);
-  pointer-events:none;background:#fffaf0;
-  opacity:calc(var(--shade,0) * var(--lit,1) * var(--lit,1) * .20);
 }
 
 .loupe{
@@ -351,10 +362,10 @@ img{-webkit-user-drag:none;user-drag:none}
       <svg viewBox="0 0 14 44" width="14" height="44" fill="none" aria-hidden="true"><polyline points="11,3 3,22 11,41" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="sb-3d" id="sb3d">
+      <div class="sb-cast ambient" aria-hidden="true"></div>
+      <div class="sb-cast contact" aria-hidden="true"></div>
+      <div class="sb-cast hair" aria-hidden="true"></div>
       <div class="sb-tilt" id="sbTilt">
-        <div class="sb-cast ambient" aria-hidden="true"></div>
-        <div class="sb-cast contact" aria-hidden="true"></div>
-        <div class="sb-cast hair" aria-hidden="true"></div>
         <div class="sb-book" id="sbBook"></div>
       </div>
       <div class="zoomwrap" id="zoomWrap" aria-hidden="true"><div class="zoominner" id="zoomInner"></div></div>
@@ -440,8 +451,8 @@ function buildCurl(dir,from,to){
     };
     dress(f,PAGES[from].url, dir==='next'?A:B);
     dress(b,PAGES[to].url,   dir==='next'?B:A);
-    f.appendChild(el('div','sh'));f.appendChild(el('div','gl'));
-    b.appendChild(el('div','sh'));b.appendChild(el('div','gl'));
+    f.appendChild(el('div','sh'));
+    b.appendChild(el('div','sh'));
     s.appendChild(f);s.appendChild(b);
     if(i===N-1)s.classList.add('edge');
     host.appendChild(s);host=s;
@@ -468,23 +479,29 @@ function applyTurn(t){
   }
 }
 function paint(){
-  book.textContent='';
+  /* Build off-DOM then swap once — clearing first flashed the book bg every flip */
+  const frag=document.createDocumentFragment();
   if(!turn){
     const f=el('div','sb-full');
     const im=new Image();im.src=PAGES[idx].url;
     im.draggable=false;
-    f.appendChild(im);book.appendChild(f);
+    f.appendChild(im);frag.appendChild(f);
     sb3d.style.setProperty('--shade','0');
   }else{
     const next=turn.dir==='next';
-    book.appendChild(halfEl('left', next?turn.from:turn.to));
-    book.appendChild(halfEl('right',next?turn.to:turn.from));
-    book.appendChild(buildCurl(turn.dir,turn.from,turn.to));
-    applyTurn(turn.t);
+    /* Full underlay seals GPU holes mid-curl so they never clear to #fff */
+    const under=el('div','sb-under');
+    under.style.backgroundImage='url('+PAGES[turn.from].url+')';
+    frag.appendChild(under);
+    frag.appendChild(halfEl('left', next?turn.from:turn.to));
+    frag.appendChild(halfEl('right',next?turn.to:turn.from));
+    frag.appendChild(buildCurl(turn.dir,turn.from,turn.to));
   }
   const a=el('button','sb-zone sb-prev'),b=el('button','sb-zone sb-next');
   a.setAttribute('aria-label','previous page');b.setAttribute('aria-label','next page');
-  book.appendChild(a);book.appendChild(b);
+  frag.appendChild(a);frag.appendChild(b);
+  book.replaceChildren(frag);
+  if(turn)applyTurn(turn.t);
   layout();
   caption();
   if(typeof syncZoomLayer==='function')syncZoomLayer();
@@ -583,7 +600,7 @@ function setView(rx,ry,z){
   if(typeof syncZoom==='function')syncZoom();
 }
 function tiltTo(cx,cy){
-  if(drag)return;
+  if(drag||turn)return;
   const r=book.getBoundingClientRect();
   if(!r.width)return;
   const nx=Math.max(-1,Math.min(1,(cx-(r.left+r.width/2))/(r.width*0.62)));
@@ -643,6 +660,8 @@ stage.addEventListener('pointercancel',endDrag);
 function startTurn(dir,t){
   spring=null;
   if(turn){idx=turn.to;turn=null;}
+  /* Flatten tilt while flipping — perspective foreshortening read as "shrink" + white desk flash */
+  setView(0,0,view.tz);
   if(typeof shoveLoupe==='function')shoveLoupe(dir);
   const from=idx;
   turn={dir:dir,from:from,to:dir==='next'?(from+1)%M:(from-1+M)%M,t:t||0};

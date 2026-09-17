@@ -405,15 +405,13 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
 
       {/* ═══════ SECTION 8: DESTINATIONS SKETCHBOOK ═══════ */}
       <section id="sketchbook" className="h-screen w-full relative flex flex-col items-center justify-center pointer-events-none overflow-hidden">
-        {/* Longer dark→cream→dark bridge so the book feels like a LuxFly chapter */}
+        {/* Longer cream→dark bridge so the book feels like a LuxFly chapter */}
         <div
           className="absolute inset-0 z-0"
           style={{
             background: [
-              'linear-gradient(180deg, rgba(12,10,9,0.92) 0%, rgba(12,10,9,0.55) 10%, rgba(239,232,220,0) 28%)',
-              'linear-gradient(0deg, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.35) 12%, rgba(239,232,220,0) 26%)',
-              'radial-gradient(ellipse 90% 70% at 50% 42%, rgba(255,252,245,0.92) 0%, transparent 68%)',
-              'radial-gradient(ellipse 70% 50% at 50% 100%, rgba(180,150,110,0.14) 0%, transparent 55%)',
+              'linear-gradient(180deg, rgba(239,232,220,0.98) 0%, rgba(239,232,220,0.9) 22%, rgba(12,10,9,0.12) 48%, rgba(12,10,9,0.75) 72%)',
+              'radial-gradient(ellipse 70% 50% at 50% 100%, rgba(180,150,110,0.12) 0%, transparent 55%)',
               '#efe8dc',
             ].join(', '),
           }}
@@ -421,22 +419,21 @@ export function OverlayHTML({ isLoading, scrollOffset }: { isLoading: boolean, s
 
         {/* Chapter framing — LuxFly voice over the desk */}
         <div className="absolute top-0 inset-x-0 z-[3] pt-5 md:pt-7 px-6 pointer-events-none flex flex-col items-center text-center">
-          <span className="text-[10px] md:text-[11px] font-semibold tracking-[0.28em] text-[#A16207] uppercase">
+          <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-[#A16207] uppercase mb-4 block">
             Destinations · Sketchbook
           </span>
-          <p className="mt-2 text-[13px] md:text-sm text-white/80 font-medium max-w-md leading-relaxed">
-            Flip through places we&apos;ve lived, then pick one to begin.
-          </p>
-          <div className="mt-3 w-10 h-px bg-[#A16207]/55" aria-hidden="true" />
+          <h2 className="text-[clamp(2rem,5vw,3rem)] font-light tracking-tight leading-none text-[#0C0A09] drop-shadow-sm">
+            Flip through places we&apos;ve lived, <span className="font-medium">then pick one to begin.</span>
+          </h2>
         </div>
 
-        <div className="w-full h-full pointer-events-auto relative z-[2] pt-16 md:pt-20">
+        <div className="w-full h-full pointer-events-auto relative z-[2] pt-24 md:pt-32">
           {sketchbookReady ? (
             <iframe
               src="/sketchbook/index.html"
               title="LuxFly Destinations Sketchbook"
               className="w-full h-full border-0 outline-none block"
-              style={{ background: 'transparent', colorScheme: 'light' }}
+              style={{ background: '#efe8dc', colorScheme: 'light' }}
               sandbox="allow-scripts"
               loading="lazy"
             />
